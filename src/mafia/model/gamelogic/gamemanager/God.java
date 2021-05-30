@@ -1,5 +1,6 @@
 package mafia.model.gamelogic.gamemanager;
 
+import mafia.model.GameData;
 import mafia.model.element.Message;
 import mafia.model.element.Player;
 import mafia.model.element.Role;
@@ -9,12 +10,26 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.net.Socket;
 
 public class God
 {
+    private GameData gameData;
     private ServerSocket serverSocket;
+    private Socket client;
+    private final int port;
     private OutputStream out;
     private InputStream in;
+
+    public God()
+    {
+        gameData = GameData.getInstance();
+        port = 5757;
+    }
+
+    public int getPort() {
+        return port;
+    }
 
     public void connectToClients()
     {

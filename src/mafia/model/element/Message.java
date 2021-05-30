@@ -25,4 +25,8 @@ public class Message
     public Set<Role> getReceivers() {
         return receivers;
     }
+
+    public Player getSender() {
+        return sender;
+    }
 }

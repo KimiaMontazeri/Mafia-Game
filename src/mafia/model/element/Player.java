@@ -5,6 +5,7 @@ public class Player
     private boolean isMafia;  // used for counting the mafias and citizens
     private boolean isAlive;
     private boolean canSpeak; // used for when the therapist shushes a player
+    private boolean readyToPlay;
     private final String username;
     private final Role role;
 
@@ -13,6 +14,7 @@ public class Player
         this.isMafia = isMafia;
         this.username = username;
         this.role = role;
+        readyToPlay = false;
     }
 
     public boolean isMafia() {
@@ -27,6 +29,12 @@ public class Player
         return canSpeak;
     }
 
+    public void isReadyToPlay()
+    {
+        readyToPlay = true;
+        isAlive = true;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -39,4 +47,7 @@ public class Player
         isAlive = false;
     }
 
+    public void setCanSpeak(boolean canSpeak) {
+        this.canSpeak = canSpeak;
+    }
 }

@@ -19,7 +19,7 @@ public class GameData implements Serializable // used for saving the game
     public ArrayList<Message> oldMessages; // add each message to this arrayList
     private final MessageAccessor messageAccessor;
 
-    public GameData getInstance()
+    public static GameData getInstance()
     {
         if (instance == null)
             return new GameData();
