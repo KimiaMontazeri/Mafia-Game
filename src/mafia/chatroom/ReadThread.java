@@ -42,17 +42,25 @@ public class ReadThread extends Thread
             {
                 Message receivedMsg = (Message) objectInputStream.readObject();
                 // show the message to the client, if they are one of the receivers
-                // TODO if statement below may be modified later
-                if (receivedMsg.getReceivers().contains(client.getPlayer().getRole()))
+                if (!client.getPlayer().isAsleep())
                 {
                     Display.print(receivedMsg);
 
-                    // TODO if statement below may be modified later
+                    // if statement below may be modified later
                     // prints the username after displaying the server's message
+                    // indicates that an answer is expected from the client
                     if (username != null) {
                         Display.print("[" + username + "]: ");
                     }
                 }
+
+
+
+                // old version:
+//                if (receivedMsg.getReceivers().contains(client.getPlayer().getRole()))
+//                {
+//                    Display.print(receivedMsg);
+//                }
             }
             catch (IOException | ClassNotFoundException e)
             {
