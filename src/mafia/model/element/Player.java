@@ -7,13 +7,12 @@ public class Player
     private boolean canSpeak; // used for when the therapist shushes a player
     private boolean readyToPlay;
     private final String username;
-    private final Role role;
+    private Role role;
 
-    public Player(boolean isMafia, String username, Role role)
+    public Player(String username)
     {
-        this.isMafia = isMafia;
         this.username = username;
-        this.role = role;
+        role = Role.UNKNOWN;
         readyToPlay = false;
     }
 
@@ -45,6 +44,12 @@ public class Player
 
     public void getKilled() {
         isAlive = false;
+    }
+
+    public void setRole(Role role)
+    {
+        if (role == Role.UNKNOWN)
+            this.role = role;
     }
 
     public void setCanSpeak(boolean canSpeak) {

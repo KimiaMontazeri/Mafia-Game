@@ -7,10 +7,10 @@ import java.util.Set;
 public class Message
 {
     private final String text;
-    private final Player sender;
+    private final String sender;
     private final Set<Role> receivers;
 
-    public Message(String text,  Player sender, Role... receivers)
+    public Message(String text, String sender, Role... receivers)
     {
         this.text = text;
         this.sender = sender;
@@ -26,7 +26,12 @@ public class Message
         return receivers;
     }
 
-    public Player getSender() {
+    public String getSender() {
         return sender;
+    }
+
+    @Override
+    public String toString() {
+        return "[" + sender + "]: " + text + "\n";
     }
 }
