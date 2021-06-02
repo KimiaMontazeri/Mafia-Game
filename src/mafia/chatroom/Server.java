@@ -15,6 +15,7 @@ public class Server
 {
     private final int port;
     private final Set<ClientHandler> userThreads;
+    private Set<String> readyUsers;
 //    private final Set<String> usernames = new HashSet<>();
 
     // the game's information
@@ -25,21 +26,24 @@ public class Server
     {
         this.port = port;
         userThreads = new HashSet<>();
+        readyUsers = new HashSet<>();
         gameData = GameData.getInstance();
         gameSetup = new GameSetup();
     }
 
     public void execute()
     {
+        int clientNum = 0;
         try (ServerSocket serverSocket = new ServerSocket(port))
         {
 
-            Display.print("Chat Server is listening on port " + port);
+            Display.print("Server is listening on port " + port);
 
             while (true)
             {
                 Socket socket = serverSocket.accept();
                 Display.print("New user connected");
+                clientNum++; // passes this integer to GameSetup.initialize(int)
 
                 ClientHandler newUser = new ClientHandler(socket, this);
                 userThreads.add(newUser);
@@ -47,7 +51,6 @@ public class Server
                 t.start();
 
                 // TODO if (game is about to start) break -> the condition is checked by a game logic element
-
             }
 
         } catch (IOException ex) {
@@ -57,7 +60,7 @@ public class Server
 
     /**
      * This method checks if a username exists in the database or not
-     * @param username username of a newly connected client
+     * @param username username of a newly connected client (cannot be "god" or "GOD")
      * @return true if the client's username is valid
      */
     public synchronized boolean register(String username)
@@ -77,6 +80,10 @@ public class Server
             // check if the client is awake or not (compare player's username with the clientHandler's username)
             client.sendMessage(msg);
         }
+    }
+
+    public void addReadyUser(String username) {
+        readyUsers.add(username);
     }
 
     public void welcomeAllPlayers()

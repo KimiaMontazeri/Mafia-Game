@@ -70,6 +70,8 @@ public class ClientHandler implements Runnable
             dataOutputStream.writeUTF("Type 'ready' if you are...");
             answer = dataInputStream.readUTF().toLowerCase();
         }while (!answer.equals("ready"));
+        // add this ready user to the server's users list
+        server.addReadyUser(username);
 
         dataInputStream.close();
         dataOutputStream.close();
