@@ -2,7 +2,7 @@ package mafia.model.gamelogic;
 
 
 import mafia.model.GameData;
-import mafia.model.element.Mood;
+import mafia.model.element.Phase;
 import mafia.model.element.Player;
 import mafia.model.element.Vote;
 
@@ -12,7 +12,7 @@ import java.util.Set;
 public class GameManager // rules the game, gives the client handler the permission to send particular messages
 {
     private final GameData gameData;
-    private Mood gameMood = Mood.NOT_STARTED;
+    private Phase gameMood = Phase.NOT_STARTED;
 
     private boolean electionIsOn = false;
     private final Set<Vote> votes;

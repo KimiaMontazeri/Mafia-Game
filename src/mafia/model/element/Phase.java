@@ -1,11 +1,12 @@
 package mafia.model.element;
 
-public enum Mood
+public enum Phase
 {
     NOT_STARTED,
     INTRODUCTION_NIGHT,
     DAY,
-    NIGHT,
+    NIGHT_MAFIA,
+    NIGHT_CITIZEN,
     ELECTION_DAY,
     ENDED
 }
