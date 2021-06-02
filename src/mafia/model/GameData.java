@@ -1,9 +1,6 @@
 package mafia.model;
 
-import mafia.model.element.Message;
-import mafia.model.element.Mood;
-import mafia.model.element.Player;
-import mafia.model.element.Vote;
+import mafia.model.element.*;
 import mafia.model.utils.MessageAccessor;
 
 import java.io.Serializable;
@@ -16,6 +13,7 @@ public class GameData implements Serializable // used for saving the game
     private ArrayList<Player> alivePlayers;
     private Mood currentMood;
     private Vote lastVote;
+    private Winner winner;
     private ArrayList<Message> oldMessages; // add each message to this arrayList
     private final MessageAccessor messageAccessor;
 
@@ -32,10 +30,11 @@ public class GameData implements Serializable // used for saving the game
         alivePlayers = new ArrayList<>();
         oldMessages = new ArrayList<>();
         currentMood = Mood.NOT_STARTED;
+        winner = Winner.UNKNOWN;
         messageAccessor = new MessageAccessor();
     }
 
-    // getters and setters 
+    // getters and setters
     public ArrayList<Player> getDeadPlayers() {
         return deadPlayers;
     }
@@ -76,6 +75,42 @@ public class GameData implements Serializable // used for saving the game
 
     public void readOldMessages() {
         oldMessages = messageAccessor.readMessages();
+    }
+
+    public ArrayList<Player> getMafias()
+    {
+        ArrayList<Player> mafias = new ArrayList<>();
+        for (Player p : alivePlayers)
+        {
+            if (isMafia(p))
+                mafias.add(p);
+        }
+        return mafias;
+    }
+
+    public ArrayList<Player> getCitizens()
+    {
+        ArrayList<Player> citizens = new ArrayList<>();
+        for (Player p : alivePlayers)
+        {
+            if (isCitizen(p))
+                citizens.add(p);
+        }
+        return citizens;
+    }
+
+    public boolean isMafia(Player player)
+    {
+        Role role = player.getRole();
+        return role == Role.MAFIA || role == Role.GODFATHER || role == Role.LECTOR;
+    }
+
+    public boolean isCitizen(Player player)
+    {
+        Role role = player.getRole();
+        return role == Role.CITIZEN || role == Role.DOCTOR || role == Role.DETECTIVE
+                || role == Role.MAYOR || role == Role.SNIPER
+                || role == Role.ARNOLD || role == Role.THERAPIST;
     }
 
 }
