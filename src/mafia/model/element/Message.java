@@ -1,10 +1,11 @@
 package mafia.model.element;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Message
+public class Message implements Serializable
 {
     private final String text;
     private final String sender;
