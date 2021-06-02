@@ -29,8 +29,9 @@ public class GameSetup
      * Initializes the game after all the players are ready
      * The server calls this method to start the game
      */
-    public void initialize(int numOfPlayers) {
-        gameData.alivePlayers = playersInit();
+    public void initialize(int numOfPlayers)
+    {
+        gameData.setAlivePlayers(playersInit());
     }
 
     public ArrayList<Player> playersInit()
