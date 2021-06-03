@@ -1,6 +1,8 @@
 package mafia.model;
 
 import mafia.model.element.*;
+import static mafia.model.element.Role.*;
+import static mafia.model.element.Phase.*;
 import mafia.model.utils.MessageAccessor;
 
 import java.io.Serializable;
@@ -14,6 +16,12 @@ public class GameData implements Serializable // used for saving the game
     private HashSet<Player> alivePlayers;
     private Phase currentPhase;
     private Vote lastVote;
+
+    public boolean lectorHasHealedHimself;
+    public boolean doctorHasHealedHimself;
+    public boolean mafiaHasShootArnold;
+    private int arnoldInquiries;
+
     private Winner winner;
     private ArrayList<Message> oldMessages; // add each message to this arrayList
     private final MessageAccessor messageAccessor;
@@ -32,9 +40,13 @@ public class GameData implements Serializable // used for saving the game
         deadPlayers = new HashSet<>();
         alivePlayers = new HashSet<>();
         oldMessages = new ArrayList<>();
-        currentPhase = Phase.NOT_STARTED;
+        currentPhase = NOT_STARTED;
         winner = Winner.UNKNOWN;
+
         hasLector = hasMayor = hasArnold = hasSniper = hasTherapist = false;
+        lectorHasHealedHimself = doctorHasHealedHimself = mafiaHasShootArnold = false;
+        arnoldInquiries = 0;
+
         messageAccessor = new MessageAccessor();
     }
 
@@ -53,6 +65,10 @@ public class GameData implements Serializable // used for saving the game
 
     public Vote getLastVote() {
         return lastVote;
+    }
+
+    public int getArnoldInquiries() {
+        return arnoldInquiries;
     }
 
     public Winner getWinner() {
@@ -90,6 +106,15 @@ public class GameData implements Serializable // used for saving the game
         oldMessages = messageAccessor.readMessages();
     }
 
+    public boolean incrementArnoldInquiries()
+    {
+        if (arnoldInquiries >= 0 && arnoldInquiries < 2) {
+            arnoldInquiries++;
+            return true;
+        }
+        return false;
+    }
+
     public HashSet<Player> getMafias()
     {
         HashSet<Player> mafias = new HashSet<>();
@@ -115,15 +140,15 @@ public class GameData implements Serializable // used for saving the game
     public boolean isMafia(Player player)
     {
         Role role = player.getRole();
-        return role == Role.MAFIA || role == Role.GODFATHER || role == Role.LECTOR;
+        return role == MAFIA || role == GODFATHER || role == LECTOR;
     }
 
     public boolean isCitizen(Player player)
     {
         Role role = player.getRole();
-        return role == Role.CITIZEN || role == Role.DOCTOR || role == Role.DETECTIVE
-                || role == Role.MAYOR || role == Role.SNIPER
-                || role == Role.ARNOLD || role == Role.THERAPIST;
+        return role == CITIZEN || role == DOCTOR || role == DETECTIVE
+                || role == MAYOR || role == SNIPER
+                || role == ARNOLD || role == THERAPIST;
     }
 
 }

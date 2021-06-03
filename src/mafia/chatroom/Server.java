@@ -11,7 +11,7 @@ import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Server
+public class Server implements Runnable
 {
     private final int port;
     private final Set<ClientHandler> userThreads;
@@ -31,7 +31,8 @@ public class Server
         gameSetup = new GameSetup();
     }
 
-    public void execute()
+    @Override
+    public void run()
     {
         int clientNum = 0;
         try (ServerSocket serverSocket = new ServerSocket(port))
@@ -86,10 +87,4 @@ public class Server
         readyUsers.add(username);
     }
 
-    public void welcomeAllPlayers()
-    {
-        // TODO complete this simple method (use all the READY players stored in the database)
-        String text = "List of the players:\n";
-        Message msg = new Message(text, "GOD");
-    }
 }

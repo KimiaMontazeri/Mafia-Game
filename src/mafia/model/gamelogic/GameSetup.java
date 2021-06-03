@@ -79,23 +79,42 @@ public class GameSetup
         // setting mafia roles to the mafias
         mafias.get(0).setRole(Role.GODFATHER);
         if (mafiaNum > 3)
+        {
             mafias.get(1).setRole(Role.LECTOR);
+            gameData.hasLector = true;
+        }
 
         // setting citizen roles to the citizens
         citizens.get(0).setRole(Role.DOCTOR);
         citizens.get(1).setRole(Role.DETECTIVE);
-        if (citizenNum > 4)
+        if (citizenNum > 5)
+        {
+            mafias.get(2).setRole(Role.MAYOR);
+            mafias.get(3).setRole(Role.SNIPER);
+            mafias.get(4).setRole(Role.ARNOLD);
+            mafias.get(5).setRole(Role.THERAPIST);
+            gameData.hasMayor = true;
+            gameData.hasSniper = true;
+            gameData.hasArnold = true;
+            gameData.hasTherapist = true;
+        }
+        else if (citizenNum == 5)
         {
             mafias.get(2).setRole(Role.SNIPER);
             mafias.get(3).setRole(Role.ARNOLD);
             mafias.get(4).setRole(Role.THERAPIST);
+            gameData.hasSniper = true;
+            gameData.hasArnold = true;
+            gameData.hasTherapist = true;
         }
         else if (citizenNum == 4)
         {
             mafias.get(2).setRole(Role.SNIPER);
             mafias.get(3).setRole(Role.ARNOLD);
+            gameData.hasSniper = true;
+            gameData.hasArnold = true;
         }
-        // the game won't have sniper arnold or therapist if the number of the citizens is less than 4
+        // the game won't have sniper arnold mayor or therapist if the number of the citizens is less than 4
 
         return players;
     }

@@ -56,14 +56,6 @@ public class GameManager // rules the game, gives the client handler the permiss
         sleep(gameData.getMafias());
     }
 
-    public void wakeupCitizens() {
-        wakeup(gameData.getCitizens());
-    }
-
-    public void sleepCitizens() {
-        sleep(gameData.getCitizens());
-    }
-
     public void wakeAllUp() {
         wakeup(gameData.getAlivePlayers());
     }

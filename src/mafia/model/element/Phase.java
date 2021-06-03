@@ -13,5 +13,6 @@ public enum Phase
     NIGHT_ARNOLD,
     DAY,
     ELECTION_DAY,
+    DAY_MAYOR,
     ENDED
 }
