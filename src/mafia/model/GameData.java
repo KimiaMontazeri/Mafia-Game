@@ -5,17 +5,20 @@ import mafia.model.utils.MessageAccessor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class GameData implements Serializable // used for saving the game
 {
     private static GameData instance;
-    private ArrayList<Player> deadPlayers;
-    private ArrayList<Player> alivePlayers;
-    private Mood currentMood;
+    private HashSet<Player> deadPlayers;
+    private HashSet<Player> alivePlayers;
+    private Phase currentPhase;
     private Vote lastVote;
     private Winner winner;
     private ArrayList<Message> oldMessages; // add each message to this arrayList
     private final MessageAccessor messageAccessor;
+
+    public boolean hasLector, hasMayor, hasArnold, hasSniper, hasTherapist;
 
     public static GameData getInstance()
     {
@@ -26,47 +29,57 @@ public class GameData implements Serializable // used for saving the game
 
     private GameData()
     {
-        deadPlayers = new ArrayList<>();
-        alivePlayers = new ArrayList<>();
+        deadPlayers = new HashSet<>();
+        alivePlayers = new HashSet<>();
         oldMessages = new ArrayList<>();
-        currentMood = Mood.NOT_STARTED;
+        currentPhase = Phase.NOT_STARTED;
         winner = Winner.UNKNOWN;
+        hasLector = hasMayor = hasArnold = hasSniper = hasTherapist = false;
         messageAccessor = new MessageAccessor();
     }
 
     // getters and setters
-    public ArrayList<Player> getDeadPlayers() {
+    public HashSet<Player> getDeadPlayers() {
         return deadPlayers;
     }
 
-    public ArrayList<Player> getAlivePlayers() {
+    public HashSet<Player> getAlivePlayers() {
         return alivePlayers;
     }
 
-    public Mood getCurrentMood() {
-        return currentMood;
+    public Phase getCurrentMood() {
+        return currentPhase;
     }
 
     public Vote getLastVote() {
         return lastVote;
     }
 
+    public Winner getWinner() {
+        return winner;
+    }
+
     public ArrayList<Message> getOldMessages() {
         return oldMessages;
     }
 
-    public void setAlivePlayers(ArrayList<Player> alivePlayers) {
-        if (alivePlayers != null)
-            this.alivePlayers = alivePlayers;
+    public void setAlivePlayers(ArrayList<Player> players)
+    {
+        if (players != null)
+            alivePlayers.addAll(players);
     }
 
-    public void setCurrentMood(Mood currentMood) {
-        this.currentMood = currentMood;
+    public void setCurrentMood(Phase currentMood) {
+        this.currentPhase = currentMood;
     }
 
     public void setLastVote(Vote lastVote) {
         if (lastVote != null)
             this.lastVote = lastVote;
+    }
+
+    public void setWinner(Winner winner) {
+        this.winner = winner;
     }
 
     public void saveMessages() {
@@ -77,9 +90,9 @@ public class GameData implements Serializable // used for saving the game
         oldMessages = messageAccessor.readMessages();
     }
 
-    public ArrayList<Player> getMafias()
+    public HashSet<Player> getMafias()
     {
-        ArrayList<Player> mafias = new ArrayList<>();
+        HashSet<Player> mafias = new HashSet<>();
         for (Player p : alivePlayers)
         {
             if (isMafia(p))
@@ -88,9 +101,9 @@ public class GameData implements Serializable // used for saving the game
         return mafias;
     }
 
-    public ArrayList<Player> getCitizens()
+    public HashSet<Player> getCitizens()
     {
-        ArrayList<Player> citizens = new ArrayList<>();
+        HashSet<Player> citizens = new HashSet<>();
         for (Player p : alivePlayers)
         {
             if (isCitizen(p))
