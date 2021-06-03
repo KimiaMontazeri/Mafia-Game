@@ -11,14 +11,12 @@ public class WriteThread extends Thread
 {
     private ObjectOutputStream objectOutputStream;
     private Socket socket;
-    private final Client client;
     private final String username;
 
-    public WriteThread(Socket socket, Client client)
+    public WriteThread(Socket socket, String username)
     {
         this.socket = socket;
-        this.client = client;
-        username = client.getPlayer().getUsername();
+        this.username = username;
     }
 
     public void openStreams()
@@ -47,11 +45,10 @@ public class WriteThread extends Thread
                 do
                 {
                     text = scanner.nextLine();
-                    // TODO define a method that determines the receivers of this client's message (with the help of the server and game's state)
-                    Message msg = new Message(text, client.getPlayer().getUsername(), Role.UNKNOWN);
+                    Message msg = new Message(text, username);
                     objectOutputStream.writeObject(msg);
 
-                } while (client.getPlayer().isAlive());
+                } while (!text.equals("exit")); // user won't be able to send messages if the exit the game
             }
             catch (IOException e)
             {

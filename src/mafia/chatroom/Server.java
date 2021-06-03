@@ -2,89 +2,103 @@ package mafia.chatroom;
 
 import mafia.model.GameData;
 import mafia.model.element.Message;
-import mafia.model.gamelogic.GameSetup;
-import mafia.view.Display;
+import mafia.model.element.Player;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class Server implements Runnable
+public class Server
 {
+    // server properties
     private final int port;
-    private final Set<ClientHandler> userThreads;
-    private Set<String> readyUsers;
-//    private final Set<String> usernames = new HashSet<>();
+    private ServerSocket serverSocket;
+    private ExecutorService pool;
 
-    // the game's information
-    private final GameData gameData;   // current state of the game
-    private final GameSetup gameSetup; // used for setting up the game
+    // user properties
+    private HashMap<ClientHandler, Boolean> users; // clientHandler -> isReady, isOnline
+
+    // game properties
+    private final GameData gameData;
 
     public Server(int port)
     {
         this.port = port;
-        userThreads = new HashSet<>();
-        readyUsers = new HashSet<>();
+        users = new HashMap<>();
         gameData = GameData.getInstance();
-        gameSetup = new GameSetup();
     }
 
-    @Override
-    public void run()
+    public HashMap<ClientHandler, Boolean> getUsers() {
+        return users;
+    }
+
+    public ExecutorService getPool() {
+        return pool;
+    }
+
+    // game manager firstly will call this method
+    public void execute()
     {
-        int clientNum = 0;
-        try (ServerSocket serverSocket = new ServerSocket(port))
+        pool = Executors.newCachedThreadPool();
+        try
         {
+            serverSocket = new ServerSocket(port);
+            System.out.println("Server is listening on port " + port);
+            RegisterHandler registerHandler = new RegisterHandler(this, serverSocket);
+            registerHandler.start();
+            Thread.sleep(30000);
+            registerHandler.isWaiting = false; // time is up, no more client can join the game
+        }
+        catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
-            Display.print("Server is listening on port " + port);
+    // game manager will call this method
+    public ArrayList<String> prepareGame()
+    {
+        ArrayList<String> usernames = new ArrayList<>();
+        for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
+        {
+            if (entry.getValue()) // is ready and online
+                usernames.add(entry.getKey().getUsername());
+            // else remove the offline or "not-ready" player form the hashmap-> not sure about this
+        }
+        return usernames;
+    }
 
-            while (true)
+    public synchronized void broadcast(Message message)
+    {
+        // check if the sender is alive and can speak
+        if (gameData.canSpeak(message.getSender()) && gameData.isAlive(message.getSender()))
+        {
+            // check if the receivers are awake (Asleep players won't receive the message)
+            for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
             {
-                Socket socket = serverSocket.accept();
-                Display.print("New user connected");
-                clientNum++; // passes this integer to GameSetup.initialize(int)
-
-                ClientHandler newUser = new ClientHandler(socket, this);
-                userThreads.add(newUser);
-                Thread t = new Thread(newUser);
-                t.start();
-
-                // TODO if (game is about to start) break -> the condition is checked by a game logic element
+                // send the message to the awake players (also, check if the player is online)
+                if (!gameData.isAsleep(entry.getKey().getUsername()) && entry.getValue())
+                    entry.getKey().sendMessage(message);
             }
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
     }
 
-    /**
-     * This method checks if a username exists in the database or not
-     * @param username username of a newly connected client (cannot be "god" or "GOD")
-     * @return true if the client's username is valid
-     */
-    public synchronized boolean register(String username)
+    public synchronized void removeClient(ClientHandler clientHandler)
     {
-        // TODO complete this simple method (don't forget to add the player to the GameData)
-        return false;
+        // remove the corresponding player from gameData
+        users.remove(clientHandler);
+        // terminate the client thread (the method called below is not complete yet)
+        clientHandler.terminate();
     }
 
-    // this method, may be synchronized
-    public void broadcast(Message msg)
-    {
-        String sender = msg.getSender();
-        for (ClientHandler client : userThreads)
-        {
-            // TODO check if the message should be displayed to a certain player or not (iterate all the players in the database)
-            // the above condition in also checked on the client side but here is more important i guess
-            // check if the client is awake or not (compare player's username with the clientHandler's username)
-            client.sendMessage(msg);
-        }
-    }
+    // server will be running on its own thread, when all the players have registered and the game starts
+//    @Override
+//    public void run()
+//    {
+//        // use the server socket
+//    }
 
-    public void addReadyUser(String username) {
-        readyUsers.add(username);
-    }
+    // TODO add methods to check if a client has got disconnected and handle it
 
 }

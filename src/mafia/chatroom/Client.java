@@ -11,13 +11,16 @@ import java.util.Scanner;
 
 public class Client
 {
-    private Player player;
+    private String username;
     private Socket socket;
     private final int port;
 
-    public Client()
-    {
+    public Client() {
         port = getPortFromUser();
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     private int getPortFromUser()
@@ -54,6 +57,8 @@ public class Client
             Display.print(serverResponse);
         }while (!serverResponse.equals("Successfully registered!"));
 
+        dataOutputStream.close();
+        dataInputStream.close();
 
         return username;
     }
@@ -85,21 +90,17 @@ public class Client
             Display.print("Connected to the game!\n");
 
             // register
-            player = new Player(getUsernameFromUser());
+            username = getUsernameFromUser();
 
             // the client announces that they are ready
             readyToPlay();
 
             // directed to the chatroom
-            new ReadThread(socket, this).start();
-            new WriteThread(socket, this).start();
+            new ReadThread(socket, username).start();
+            new WriteThread(socket, username).start();
         }
         catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public Player getPlayer() {
-        return player;
     }
 }

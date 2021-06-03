@@ -10,14 +10,12 @@ public class ReadThread extends Thread
 {
     private ObjectInputStream objectInputStream;
     private Socket socket;
-    private final Client client;
     private final String username;
 
-    public ReadThread(Socket socket, Client client)
+    public ReadThread(Socket socket, String username)
     {
         this.socket = socket;
-        this.client = client;
-        username = client.getPlayer().getUsername();
+        this.username = username;
     }
 
     public void openStreams()
@@ -42,30 +40,19 @@ public class ReadThread extends Thread
             {
                 Message receivedMsg = (Message) objectInputStream.readObject();
                 // show the message to the client, if they are one of the receivers
-                if (!client.getPlayer().isAsleep())
-                {
-                    Display.print(receivedMsg);
+                Display.print(receivedMsg);
 
-                    // if statement below may be modified later
-                    // prints the username after displaying the server's message
-                    // indicates that an answer is expected from the client
-                    if (username != null) {
-                        Display.print("[" + username + "]: ");
-                    }
+                // if statement below may be modified later
+                // prints the username after displaying the server's message
+                // indicates that an answer is expected from the client
+                if (username != null) {
+                    Display.print("[" + username + "]: ");
                 }
 
-
-
-                // old version:
-//                if (receivedMsg.getReceivers().contains(client.getPlayer().getRole()))
-//                {
-//                    Display.print(receivedMsg);
-//                }
+                // break from the loop if the game is ended
             }
-            catch (IOException | ClassNotFoundException e)
-            {
+            catch (IOException | ClassNotFoundException e) {
                 System.err.println("Error reading from server :(");
-                break;
             }
         }
     }

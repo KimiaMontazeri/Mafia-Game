@@ -8,43 +8,20 @@ import java.util.*;
 
 public class GameSetup
 {
-    private final HashMap<String, Boolean> onlineUsers; // username -> isReadyToPlay
-    private final GameData gameData;
-
-    public GameSetup()
-    {
-        onlineUsers = new HashMap<>();
-        gameData = GameData.getInstance();
-    }
-
-    public void addUser(String username) {
-        onlineUsers.put(username, false); // at first, the user is not ready to play
-    }
-
-    public void readyPlayer(String username) {
-        onlineUsers.put(username, true); // the user has declared that they are ready to play
-    }
-
     /**
      * Initializes the game after all the players are ready
-     * The server calls this method to start the game
+     * The GameManager calls this method to start the game
      */
-    public void initialize(int numOfPlayers)
-    {
-        gameData.setAlivePlayers(playersInit());
+    public static void initialize(ArrayList<String> usernames, GameData gameData) {
+        gameData.setAlivePlayers(playersInit(usernames, gameData));
     }
 
-    public ArrayList<Player> playersInit()
+    private static ArrayList<Player> playersInit(ArrayList<String> usernames, GameData gameData)
     {
         ArrayList<Player> players = new ArrayList<>();
-        ArrayList<Role> roles = new ArrayList<>();
 
-        for (Map.Entry<String, Boolean> entry : onlineUsers.entrySet())
-        {
-            // if the player is ready
-            if (entry.getValue())
-                players.add(new Player(entry.getKey()));
-        }
+        for (String username : usernames)
+            players.add(new Player(username));
 
         // generate random roles for each player
         int totalPlayers = players.size();

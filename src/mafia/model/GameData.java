@@ -8,6 +8,7 @@ import mafia.model.utils.MessageAccessor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 public class GameData implements Serializable // used for saving the game
 {
@@ -149,6 +150,38 @@ public class GameData implements Serializable // used for saving the game
         return role == CITIZEN || role == DOCTOR || role == DETECTIVE
                 || role == MAYOR || role == SNIPER
                 || role == ARNOLD || role == THERAPIST;
+    }
+
+    public boolean isAsleep(String username)
+    {
+        for (Player p : alivePlayers)
+        {
+            // if p is the wanted player
+            if (p.getUsername().equals(username))
+                return p.isAsleep();
+        }
+        // if this line is reached, it means that the given username is not in the game
+        return false;
+    }
+
+    public boolean canSpeak(String username)
+    {
+        for (Player p : alivePlayers)
+        {
+            if (p.getUsername().equals(username))
+                return p.canSpeak();
+        }
+        return false;
+    }
+
+    public boolean isAlive(String username)
+    {
+        for (Player p : alivePlayers)
+        {
+            if (p.getUsername().equals(username))
+                return p.isAlive();
+        }
+        return false;
     }
 
 }

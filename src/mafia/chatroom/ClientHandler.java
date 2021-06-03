@@ -9,16 +9,22 @@ public class ClientHandler implements Runnable
 {
     private final Socket socket;
     private final Server server;
+    private final RegisterHandler registerHandler;
     private InputStream in;
     private OutputStream out;
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
     private String username;
 
-    public ClientHandler(Socket socket, Server server)
+    public ClientHandler(Socket socket, Server server, RegisterHandler registerHandler)
     {
         this.socket = socket;
         this.server = server;
+        this.registerHandler = registerHandler;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public void openStreams()
@@ -45,9 +51,9 @@ public class ClientHandler implements Runnable
 
             String username = dataInputStream.readUTF();
 
-            while (!server.register(username))
+            while (!registerHandler.register(this))
             {
-                dataOutputStream.writeUTF("This username already exists :(\nTry again please: ");
+                dataOutputStream.writeUTF("This username is taken :( Try another one: ");
                 username = dataInputStream.readUTF();
             }
             // notify the client that everything is fine
@@ -69,9 +75,12 @@ public class ClientHandler implements Runnable
         {
             dataOutputStream.writeUTF("Type 'ready' if you are...");
             answer = dataInputStream.readUTF().toLowerCase();
-        }while (!answer.equals("ready"));
+        } while (!answer.equals("ready"));
+
         // add this ready user to the server's users list
-        server.addReadyUser(username);
+        //server.addReadyUser(username);
+        if (!registerHandler.addReadyClient(this))
+            dataOutputStream.writeUTF("You are not registered in the game!");
 
         dataInputStream.close();
         dataOutputStream.close();
@@ -95,6 +104,7 @@ public class ClientHandler implements Runnable
         {
             e.printStackTrace();
         }
+        server.removeClient(this);
     }
 
     public void sendMessage(Message msg)
