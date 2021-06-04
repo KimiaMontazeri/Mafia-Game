@@ -1,7 +1,6 @@
-package mafia.chatroom;
+package mafia.chatroom.client;
 
 import mafia.model.element.Message;
-import mafia.model.element.Role;
 
 import java.io.*;
 import java.net.Socket;

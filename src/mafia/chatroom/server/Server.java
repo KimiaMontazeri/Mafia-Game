@@ -1,8 +1,7 @@
-package mafia.chatroom;
+package mafia.chatroom.server;
 
 import mafia.model.GameData;
 import mafia.model.element.Message;
-import mafia.model.element.Player;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -48,8 +47,9 @@ public class Server
             System.out.println("Server is listening on port " + port);
             RegisterHandler registerHandler = new RegisterHandler(this, serverSocket);
             registerHandler.start();
-            Thread.sleep(30000);
+            Thread.sleep(70000);
             registerHandler.isWaiting = false; // time is up, no more client can join the game
+            broadcast(new Message("Time is up everyone!", "GOD"));
         }
         catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -71,8 +71,9 @@ public class Server
 
     public synchronized void broadcast(Message message)
     {
-        // check if the sender is alive and can speak
-        if (gameData.canSpeak(message.getSender()) && gameData.isAlive(message.getSender()))
+        // check if the sender is alive and can speak or is the game's God
+        String sender = message.getSender();
+        if (sender.equals("GOD") || (gameData.canSpeak(sender) && gameData.isAlive(sender)))
         {
             // check if the receivers are awake (Asleep players won't receive the message)
             for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
@@ -82,6 +83,16 @@ public class Server
                     entry.getKey().sendMessage(message);
             }
         }
+    }
+
+    public synchronized boolean usernameExists(String username)
+    {
+        for (ClientHandler clientHandler : users.keySet())
+        {
+            if (clientHandler.getUsername().equals(username))
+                return true;
+        }
+        return false;
     }
 
     public synchronized void removeClient(ClientHandler clientHandler)

@@ -1,19 +1,23 @@
-package mafia.chatroom;
+package mafia.chatroom.client;
 
-import mafia.model.element.Player;
 import mafia.view.Display;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client
 {
-    private String username;
+    // server's data
     private Socket socket;
     private final int port;
+
+    // streams
+    private DataInputStream dataInputStream;
+    private DataOutputStream dataOutputStream;
+
+    // client's data
+    private String username;
 
     public Client() {
         port = getPortFromUser();
@@ -39,11 +43,9 @@ public class Client
         }
     }
 
-    private String getUsernameFromUser() throws IOException
+    private String register() throws IOException
     {
         Scanner scanner = new Scanner(System.in);
-        DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-        DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
         Display.print("Enter your name: ");
         String username;
@@ -55,10 +57,7 @@ public class Client
             dataOutputStream.writeUTF(username);
             serverResponse = dataInputStream.readUTF();
             Display.print(serverResponse);
-        }while (!serverResponse.equals("Successfully registered!"));
-
-        dataOutputStream.close();
-        dataInputStream.close();
+        }while (!serverResponse.equalsIgnoreCase("Successfully registered!\n"));
 
         return username;
     }
@@ -66,20 +65,19 @@ public class Client
     public void readyToPlay() throws IOException
     {
         Scanner scanner = new Scanner(System.in);
-        DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-        DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
         String answer = "";
         String command = dataInputStream.readUTF();
         Display.print(command);
 
         // wait for the client to get ready
-        while (!answer.equals("ready"))
-        {
+        while (!answer.equals("ready")) {
             answer = scanner.nextLine().toLowerCase();
         }
         // notify the server that the client is ready to play
         dataOutputStream.writeUTF(answer);
+        // display the server's answer
+        Display.print(dataInputStream.readUTF());
     }
 
     public void connectToServer()
@@ -89,13 +87,16 @@ public class Client
             socket = new Socket("127.0.0.1", port);
             Display.print("Connected to the game!\n");
 
+            dataInputStream = new DataInputStream(socket.getInputStream());
+            dataOutputStream = new DataOutputStream(socket.getOutputStream());
+
             // register
-            username = getUsernameFromUser();
+            username = register();
 
             // the client announces that they are ready
             readyToPlay();
 
-            // directed to the chatroom
+            // directed to the chatroom and the game will start
             new ReadThread(socket, username).start();
             new WriteThread(socket, username).start();
         }

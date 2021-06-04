@@ -1,4 +1,4 @@
-package mafia.chatroom;
+package mafia.chatroom.server;
 
 import mafia.model.element.Message;
 
@@ -7,13 +7,20 @@ import java.net.Socket;
 
 public class ClientHandler implements Runnable
 {
+    // sockets and server
     private final Socket socket;
     private final Server server;
     private final RegisterHandler registerHandler;
+
+    // streams
     private InputStream in;
     private OutputStream out;
+    private DataInputStream dataInputStream;
+    private DataOutputStream dataOutputStream;
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
+
+    // client's data
     private String username;
 
     public ClientHandler(Socket socket, Server server, RegisterHandler registerHandler)
@@ -27,63 +34,46 @@ public class ClientHandler implements Runnable
         return username;
     }
 
-    public void openStreams()
-    {
-        try
-        {
-            in = socket.getInputStream();
-            out = socket.getOutputStream();
-
-            objectInputStream = new ObjectInputStream(in);
-            objectOutputStream = new ObjectOutputStream(out);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void register() throws IOException
     {
         if (this.username == null)
         {
-            DataInputStream dataInputStream = new DataInputStream(in);
-            DataOutputStream dataOutputStream = new DataOutputStream(out);
-
             String username = dataInputStream.readUTF();
+            this.username = username;
 
             while (!registerHandler.register(this))
             {
                 dataOutputStream.writeUTF("This username is taken :( Try another one: ");
                 username = dataInputStream.readUTF();
+                this.username = username;
             }
             // notify the client that everything is fine
-            this.username = username;
-            dataOutputStream.writeUTF("Successfully registered!");
-
-            dataInputStream.close();
-            dataOutputStream.close();
+            dataOutputStream.writeUTF("Successfully registered!\n");
+            System.out.println("Client with username [" + username + "] got registered");
         }
     }
 
-    public void isReady() throws IOException
+    public boolean isReady() throws IOException
     {
-        DataInputStream dataInputStream = new DataInputStream(in);
-        DataOutputStream dataOutputStream = new DataOutputStream(out);
-
         String answer = "";
-        do
+
+        dataOutputStream.writeUTF("Type 'ready' if you want to play\n");
+        answer = dataInputStream.readUTF();
+        if (answer.equalsIgnoreCase("ready"))
         {
-            dataOutputStream.writeUTF("Type 'ready' if you are...");
-            answer = dataInputStream.readUTF().toLowerCase();
-        } while (!answer.equals("ready"));
-
-        // add this ready user to the server's users list
-        //server.addReadyUser(username);
-        if (!registerHandler.addReadyClient(this))
-            dataOutputStream.writeUTF("You are not registered in the game!");
-
-        dataInputStream.close();
-        dataOutputStream.close();
+            if (!registerHandler.addReadyClient(this)) {
+                dataOutputStream.writeUTF("You are not registered in the game!");
+                return false;
+            }
+            dataOutputStream.writeUTF("""
+                    You are added to the game's members!
+                    Waiting for others to join, the game will start in just a moment...
+                    Don't go anywhere!!!
+                    """);
+            System.out.println("[" + username + "] is ready to play");
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -91,14 +81,25 @@ public class ClientHandler implements Runnable
     {
         try
         {
+            in = socket.getInputStream();
+            out = socket.getOutputStream();
+
+            dataInputStream = new DataInputStream(in);
+            dataOutputStream = new DataOutputStream(out);
+
             register();
-            isReady();
-            Message clientMessage;
-            do
+            if (isReady())
             {
-                clientMessage = (Message) objectInputStream.readObject();
-                server.broadcast(clientMessage);
-            }while (clientMessage.getText().equals("exit"));
+                objectInputStream = new ObjectInputStream(in);
+                objectOutputStream = new ObjectOutputStream(out);
+
+                Message clientMessage;
+                do
+                {
+                    clientMessage = (Message) objectInputStream.readObject();
+                    server.broadcast(clientMessage);
+                } while (clientMessage.getText().equals("exit"));
+            }
         }
         catch (IOException | ClassNotFoundException e)
         {

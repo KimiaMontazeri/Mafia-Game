@@ -1,4 +1,4 @@
-package mafia.chatroom;
+package mafia.chatroom.client;
 
 import mafia.model.element.Message;
 import mafia.view.Display;

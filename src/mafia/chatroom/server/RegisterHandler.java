@@ -1,4 +1,4 @@
-package mafia.chatroom;
+package mafia.chatroom.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -33,7 +33,6 @@ public class RegisterHandler extends Thread
                 System.out.println("[Client " + clientNum + "] got connected.");
 
                 ClientHandler newUser = new ClientHandler(socket, server, this);
-                server.getUsers().put(newUser, false);
                 server.getPool().execute(newUser);
             }
             catch (IOException e) {
@@ -44,7 +43,7 @@ public class RegisterHandler extends Thread
 
     public synchronized boolean register(ClientHandler clientHandler)
     {
-        if (server.getUsers().containsKey(clientHandler))
+        if (server.usernameExists(clientHandler.getUsername()))
             return false;
 
         server.getUsers().put(clientHandler, false);
