@@ -9,21 +9,25 @@ import java.util.*;
 
 public class GameSetup
 {
-    private static GameData gameData;
+    private GameData gameData;
+
+    public GameSetup() {
+        gameData = GameData.getInstance();
+    }
 
     /**
      * Initializes the game after all the players are ready
      * The GameManager calls this method to start the game
      */
-    public static void initialize(ArrayList<String> usernames) {
+    public void initialize(ArrayList<String> usernames) {
         gameData = GameData.getInstance();
         gameData.setAlivePlayers(playersInit(usernames));
         gameData.setCurrentMood(NOT_STARTED);
     }
 
-    private static ArrayList<Player> playersInit(ArrayList<String> usernames)
+    private ArrayList<Player> playersInit(ArrayList<String> usernames)
     {
-        ArrayList<Player> players = new ArrayList<>();
+        ArrayList<Player> players = new ArrayList<>(usernames.size());
 
         for (String username : usernames)
             players.add(new Player(username));
@@ -38,8 +42,8 @@ public class GameSetup
         Player chosenPlayer;
 
         // dividing the players into to 2 teams -> mafias and citizens
-        ArrayList<Player> mafias = new ArrayList<>();
-        ArrayList<Player> citizens = new ArrayList<>();
+        ArrayList<Player> mafias = new ArrayList<>(mafiaNum);
+        ArrayList<Player> citizens = new ArrayList<>(citizenNum);
 
         for (int i = 0; i < mafiaNum; i++)
         {
@@ -115,7 +119,6 @@ public class GameSetup
             gameData.hasArnold = true;
         }
         // the game won't have sniper arnold mayor or therapist if the number of the citizens is less than 4
-
         return players;
     }
 }

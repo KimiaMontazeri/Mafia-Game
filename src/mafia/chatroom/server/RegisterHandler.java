@@ -3,7 +3,6 @@ package mafia.chatroom.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 
 /**
  * This class handles registering the clients in the game
@@ -46,19 +45,12 @@ public class RegisterHandler extends Thread
         if (server.usernameExists(clientHandler.getUsername()))
             return false;
 
-        server.getUsers().put(clientHandler, false);
+        server.addClient(clientHandler);
         return true;
     }
 
-    public synchronized boolean addReadyClient(ClientHandler clientHandler)
-    {
-        HashMap<ClientHandler, Boolean> users = server.getUsers();
-        if (users.containsKey(clientHandler))
-        {
-            users.put(clientHandler, true);
-            return true;
-        }
-        return false;
+    public synchronized boolean addReadyClient(ClientHandler clientHandler) {
+        return server.addReadyClient(clientHandler);
     }
 
 }

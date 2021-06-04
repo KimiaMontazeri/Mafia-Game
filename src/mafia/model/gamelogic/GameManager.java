@@ -42,7 +42,8 @@ public class GameManager // rules the game, gives the client handler the permiss
             return false;
         }
         // set up the game (create players in the gameData and set random roles to it)
-        GameSetup.initialize(server.prepareGame()); // sets the game's phase to NOT_STARTED
+        GameSetup gameSetup = new GameSetup();
+        gameSetup.initialize(server.prepareGame()); // sets the game's phase to NOT_STARTED
         return true;
     }
 

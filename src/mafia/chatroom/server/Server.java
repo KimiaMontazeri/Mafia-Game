@@ -47,7 +47,7 @@ public class Server
             System.out.println("Server is listening on port " + port);
             RegisterHandler registerHandler = new RegisterHandler(this, serverSocket);
             registerHandler.start();
-            Thread.sleep(120000); // 2 min
+            Thread.sleep(60000); // 2 min
             registerHandler.isWaiting = false; // time is up, no more client can join the game
             System.out.println("Server is preparing the game, no more clients can join");
         }
@@ -99,6 +99,20 @@ public class Server
         {
             if (clientHandler.getUsername().equals(username))
                 return true;
+        }
+        return false;
+    }
+
+    public synchronized void addClient(ClientHandler clientHandler) {
+        users.put(clientHandler, false);
+    }
+
+    public synchronized boolean addReadyClient(ClientHandler clientHandler)
+    {
+        if (users.containsKey(clientHandler))
+        {
+            users.put(clientHandler, true);
+            return true;
         }
         return false;
     }

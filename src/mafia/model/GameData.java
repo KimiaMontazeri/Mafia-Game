@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class GameData implements Serializable // used for saving the game
 {
-    private static GameData instance;
+    private static GameData instance = null;
     private HashSet<Player> deadPlayers;
     private HashSet<Player> alivePlayers;
     private Phase currentPhase;
@@ -31,8 +31,10 @@ public class GameData implements Serializable // used for saving the game
 
     public static GameData getInstance()
     {
-        if (instance == null)
-            return new GameData();
+        if (instance == null) {
+            instance = new GameData();
+            return instance;
+        }
         return instance;
     }
 
@@ -109,7 +111,7 @@ public class GameData implements Serializable // used for saving the game
 
     public boolean incrementArnoldInquiries()
     {
-        if (arnoldInquiries >= 0 && arnoldInquiries < 2) {
+        if (arnoldInquiries == 0 || arnoldInquiries == 1) {
             arnoldInquiries++;
             return true;
         }
@@ -160,7 +162,8 @@ public class GameData implements Serializable // used for saving the game
             if (p.getUsername().equals(username))
                 return p.isAsleep();
         }
-        // if this line is reached, it means that the given username is not in the game
+        // if this line is reached, the given username is not in the game
+        System.out.println(username + " is not in the database!");
         return false;
     }
 

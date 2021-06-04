@@ -1,7 +1,6 @@
 package mafia.model;
 
 import mafia.model.element.Player;
-import mafia.model.gamelogic.GameManager;
 
 import static mafia.model.element.Role.GODFATHER;
 import static mafia.model.element.Role.LECTOR;
@@ -17,7 +16,7 @@ public class GodMessages
 
     public static String welcomeMafias()
     {
-        StringBuilder mafiaNames = new StringBuilder("----------------------");
+        StringBuilder mafiaNames = new StringBuilder("----------------------\n");
 
         for (Player p : gameData.getMafias())
         {
@@ -29,7 +28,7 @@ public class GodMessages
                 mafiaNames.append(p.getUsername()).append("\n");
         }
 
-        mafiaNames.append("----------------------");
+        mafiaNames.append("----------------------\n");
 
         return "HELLO MAFIAS!\n " +
                 "Try to kill the citizens as much as you can!\n" +

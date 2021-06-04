@@ -5,8 +5,8 @@ import mafia.model.element.Winner;
 
 public class GameLoop
 {
-    private GameData gameData;
-    private GameManager god;
+    private final GameData gameData;
+    private final GameManager god;
 
     public GameLoop()
     {
@@ -16,19 +16,22 @@ public class GameLoop
 
     public void start()
     {
-        // calls the game manager setUpTheServer method
-
-        // welcoming the players by telling them their roles (introduction night)
-        god.nextPhase(); // switches from "NOT_STARTED" to "INTRODUCTION_NIGHT"
-        god.introduce();
+        // if the game can be started
+        if (god.setUpTheServer())
+        {
+            god.nextPhase(); // switches from "NOT_STARTED" to "INTRODUCTION_NIGHT"
+            god.introduce(); // welcomes each player to the game and tell them their roles
+            loop();
+        }
+        // the game is canceled, shut down the program
     }
 
-    public void end()
+    private void end()
     {
         // announce the winner to all the players and end the whole game
     }
 
-    public void loop()
+    private void loop()
     {
         // check game over after each night phase or election day
         while (!gameOver())
@@ -46,9 +49,10 @@ public class GameLoop
 
             /* announcing the election result and then check if the game is over or not */
         }
+        end();
     }
 
-    public boolean gameOver()
+    private boolean gameOver()
     {
         int mafiaNum = gameData.getMafias().size();
         int citizenNum = gameData.getCitizens().size();
