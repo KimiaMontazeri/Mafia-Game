@@ -1,6 +1,7 @@
 package mafia.chatroom.server;
 
 import mafia.model.GameData;
+import mafia.model.element.Election;
 import mafia.model.element.Message;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ public class Server
 
     // game properties
     private final GameData gameData;
+    private boolean electionIsOn = false;
 
     public Server(int port)
     {
@@ -37,7 +39,10 @@ public class Server
         return pool;
     }
 
-    // game manager firstly will call this method
+    public boolean electionIsOn() {
+        return electionIsOn;
+    }
+
     public void execute()
     {
         pool = Executors.newCachedThreadPool();
@@ -56,7 +61,23 @@ public class Server
         }
     }
 
-    // game manager will call this method
+    public void startElection()
+    {
+        // god has told players that it's time to vote
+        electionIsOn = true;
+        gameData.setLastElection(new Election());
+        try {
+            Thread.sleep(20000);
+            broadcast(new Message("10 seconds left from the election!", "GOD"));
+            Thread.sleep(10000);
+            broadcast(new Message("Election time has ended!", "GOD"));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            electionIsOn = false;
+        }
+    }
+
     public ArrayList<String> prepareGame()
     {
         ArrayList<String> usernames = new ArrayList<>();
@@ -69,12 +90,19 @@ public class Server
         return usernames;
     }
 
+    // god calls this method when he wants to ask a yes no question from player(s)
+    public void yesNoQuestion(Message message)
+    {
+
+    }
+
     public synchronized void broadcast(Message message)
     {
         // check if the sender is alive and can speak or is the game's God
         String sender = message.getSender();
-        if (sender.equals("GOD") || (gameData.canSpeak(sender) && gameData.isAlive(sender)))
+        if (canSendMessageFrom(sender))
         {
+            if (electionIsOn) collectVote(message);
             // check if the receivers are awake (Asleep players won't receive the message)
             for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
             {
@@ -82,6 +110,20 @@ public class Server
                 if (canSendMessageTo(entry, sender))
                     entry.getKey().sendMessage(message);
             }
+            // store the message in the gameData
+            gameData.addMessage(message);
+        }
+    }
+
+    public void collectVote(Message message)
+    {
+        String candidate = message.getText();
+        if (usernameExists(candidate))
+            gameData.getLastElection().addVote(message.getSender(), candidate);
+        else
+        {
+            Message errorMsg = new Message("Your chosen candidate is invalid! Try again: ", "GOD");
+            findClientHandler(message.getSender()).sendMessage(errorMsg);
         }
     }
 
@@ -92,7 +134,13 @@ public class Server
                 !entry.getKey().getUsername().equals(sender);
     }
 
-    // used to avoid registering repetitive usernames
+    private boolean canSendMessageFrom(String sender)
+    {
+        return sender.equals("GOD") || (gameData.canSpeak(sender)
+                                    && !gameData.isAsleep(sender)
+                                    && gameData.isAlive(sender));
+    }
+
     public synchronized boolean usernameExists(String username)
     {
         for (ClientHandler clientHandler : users.keySet())
@@ -101,6 +149,17 @@ public class Server
                 return true;
         }
         return false;
+    }
+
+    // TODO make this method and its above method into one single method with return ClientHandler
+    public ClientHandler findClientHandler(String username)
+    {
+        for (ClientHandler clientHandler : users.keySet())
+        {
+            if (clientHandler.getUsername().equals(username))
+                return clientHandler;
+        }
+        return null;
     }
 
     public synchronized void addClient(ClientHandler clientHandler) {
@@ -124,13 +183,6 @@ public class Server
         // terminate the client thread (the method called below is not complete yet)
         clientHandler.terminate();
     }
-
-    // server will be running on its own thread, when all the players have registered and the game starts
-//    @Override
-//    public void run()
-//    {
-//        // use the server socket
-//    }
 
     // TODO add methods to check if a client has got disconnected and handle it
 

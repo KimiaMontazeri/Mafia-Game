@@ -1,36 +1,35 @@
 package mafia.model.element;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class Election
 {
-    private final Set<Vote> votes;
+    private final HashMap<String, String> votes;   // voter's username -> candidate's username
 
     public Election() {
-        votes = new HashSet<>();
+        votes = new HashMap<>();
     }
 
-    public Set<Vote> getVotes() {
+    public HashMap<String, String> getVotes() {
         return votes;
     }
 
-    public void addVote(Vote vote) {
-        votes.add(vote);
+    public void addVote(String voter, String candidate) {
+        votes.put(voter, candidate);
     }
 
     /**
      * Calculates the final result of the election
+     * @return the username of the final candidate
      */
-    public void calFinalResult()
+    public String calFinalResult()
     {
-
+//        Set<String> candidates = new HashSet<>(votes.values());
+        // TODO complete this method
+        return null;
     }
 
-    @Override
-    public String toString() {
-        return "Election{" +
-                "votes=" + votes +
-                '}';
-    }
 }

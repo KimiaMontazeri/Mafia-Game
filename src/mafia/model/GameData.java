@@ -8,15 +8,14 @@ import mafia.model.utils.MessageAccessor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
 
 public class GameData implements Serializable // used for saving the game
 {
     private static GameData instance = null;
-    private HashSet<Player> deadPlayers;
-    private HashSet<Player> alivePlayers;
+    private final HashSet<Player> deadPlayers;
+    private final HashSet<Player> alivePlayers;
     private Phase currentPhase;
-    private Vote lastVote;
+    private Election lastElection;
 
     public boolean lectorHasHealedHimself;
     public boolean doctorHasHealedHimself;
@@ -66,8 +65,8 @@ public class GameData implements Serializable // used for saving the game
         return currentPhase;
     }
 
-    public Vote getLastVote() {
-        return lastVote;
+    public Election getLastElection() {
+        return lastElection;
     }
 
     public int getArnoldInquiries() {
@@ -82,8 +81,16 @@ public class GameData implements Serializable // used for saving the game
         return oldMessages;
     }
 
-    public void setAlivePlayers(ArrayList<Player> players)
-    {
+    public Message getLastMessage() {
+        return oldMessages.get(oldMessages.size() - 1);
+    }
+
+    public void addMessage(Message message) {
+        if (message != null)
+            oldMessages.add(message);
+    }
+
+    public void setAlivePlayers(ArrayList<Player> players) {
         if (players != null)
             alivePlayers.addAll(players);
     }
@@ -92,9 +99,8 @@ public class GameData implements Serializable // used for saving the game
         this.currentPhase = currentMood;
     }
 
-    public void setLastVote(Vote lastVote) {
-        if (lastVote != null)
-            this.lastVote = lastVote;
+    public void setLastElection(Election lastElection) {
+        this.lastElection = lastElection;
     }
 
     public void setWinner(Winner winner) {
@@ -185,6 +191,26 @@ public class GameData implements Serializable // used for saving the game
                 return p.isAlive();
         }
         return false;
+    }
+
+    public Player findPlayer(String username)
+    {
+        for (Player p : alivePlayers)
+        {
+            if (p.getUsername().equals(username))
+                return p;
+        }
+        return null;
+    }
+
+    public Player findPlayer(Role role)
+    {
+        for (Player p : alivePlayers)
+        {
+            if (p.getRole() == role)
+                return p;
+        }
+        return null;
     }
 
 }
