@@ -17,7 +17,7 @@ public class Server
     private ExecutorService pool;
 
     // user properties
-    private HashMap<ClientHandler, Boolean> users; // clientHandler -> isReady, isOnline
+    private final HashMap<ClientHandler, Boolean> users; // clientHandler -> isReady, isOnline
 
     // game properties
     private final GameData gameData;
@@ -47,9 +47,9 @@ public class Server
             System.out.println("Server is listening on port " + port);
             RegisterHandler registerHandler = new RegisterHandler(this, serverSocket);
             registerHandler.start();
-            Thread.sleep(70000);
+            Thread.sleep(120000); // 2 min
             registerHandler.isWaiting = false; // time is up, no more client can join the game
-            broadcast(new Message("Time is up everyone!", "GOD"));
+            System.out.println("Server is preparing the game, no more clients can join");
         }
         catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -79,12 +79,20 @@ public class Server
             for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
             {
                 // send the message to the awake players (also, check if the player is online)
-                if (!gameData.isAsleep(entry.getKey().getUsername()) && entry.getValue())
+                if (canSendMessageTo(entry, sender))
                     entry.getKey().sendMessage(message);
             }
         }
     }
 
+    private boolean canSendMessageTo(Map.Entry<ClientHandler, Boolean> entry, String sender)
+    {
+        return !gameData.isAsleep(entry.getKey().getUsername()) &&
+                entry.getValue() &&
+                !entry.getKey().getUsername().equals(sender);
+    }
+
+    // used to avoid registering repetitive usernames
     public synchronized boolean usernameExists(String username)
     {
         for (ClientHandler clientHandler : users.keySet())

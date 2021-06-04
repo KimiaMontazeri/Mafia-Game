@@ -2,21 +2,26 @@ package mafia.model.gamelogic;
 
 import mafia.model.GameData;
 import mafia.model.element.Player;
-import mafia.model.element.Role;
+import static mafia.model.element.Role.*;
+import static mafia.model.element.Phase.*;
 
 import java.util.*;
 
 public class GameSetup
 {
+    private static GameData gameData;
+
     /**
      * Initializes the game after all the players are ready
      * The GameManager calls this method to start the game
      */
-    public static void initialize(ArrayList<String> usernames, GameData gameData) {
-        gameData.setAlivePlayers(playersInit(usernames, gameData));
+    public static void initialize(ArrayList<String> usernames) {
+        gameData = GameData.getInstance();
+        gameData.setAlivePlayers(playersInit(usernames));
+        gameData.setCurrentMood(NOT_STARTED);
     }
 
-    private static ArrayList<Player> playersInit(ArrayList<String> usernames, GameData gameData)
+    private static ArrayList<Player> playersInit(ArrayList<String> usernames)
     {
         ArrayList<Player> players = new ArrayList<>();
 
@@ -40,36 +45,49 @@ public class GameSetup
         {
             randomNumber = random.nextInt(totalPlayers);
             chosenPlayer = players.get(randomNumber);
-            if (chosenPlayer.getRole() == Role.UNKNOWN)
+            if (chosenPlayer.getRole() == UNKNOWN)
             {
-                chosenPlayer.setRole(Role.MAFIA);
-                mafias.add(chosenPlayer);
+                chosenPlayer.setRole(MAFIA);
+                mafias.add(chosenPlayer); // remove kon -_-
+                System.out.println("Added " + chosenPlayer.getUsername() + " to team mafia");
             }
             else i--;
         }
         for (Player p : players)
         {
-            if (p.getRole() == Role.UNKNOWN)
+            if (p.getRole() == UNKNOWN)
+            {
+                p.setRole(CITIZEN);
                 citizens.add(p);
+                System.out.println("Added " + p.getUsername() + " to team city");
+            }
         }
 
         // setting mafia roles to the mafias
-        mafias.get(0).setRole(Role.GODFATHER);
+        mafias.get(0).setRole(GODFATHER);
+        System.out.println(mafias.get(0).getUsername() + " is godfather");
         if (mafiaNum > 3)
         {
-            mafias.get(1).setRole(Role.LECTOR);
+            mafias.get(1).setRole(LECTOR);
             gameData.hasLector = true;
+            System.out.println(mafias.get(1).getUsername() + " is doctor lector");
         }
 
         // setting citizen roles to the citizens
-        citizens.get(0).setRole(Role.DOCTOR);
-        citizens.get(1).setRole(Role.DETECTIVE);
+        citizens.get(0).setRole(DOCTOR);
+        System.out.println(citizens.get(0).getUsername() + " is doctor");
+        citizens.get(1).setRole(DETECTIVE);
+        System.out.println(citizens.get(1).getUsername() + " is detective");
         if (citizenNum > 5)
         {
-            mafias.get(2).setRole(Role.MAYOR);
-            mafias.get(3).setRole(Role.SNIPER);
-            mafias.get(4).setRole(Role.ARNOLD);
-            mafias.get(5).setRole(Role.THERAPIST);
+            citizens.get(2).setRole(MAYOR);
+            System.out.println(citizens.get(2).getUsername() + " is mayor");
+            citizens.get(3).setRole(SNIPER);
+            System.out.println(citizens.get(3).getUsername() + " is sniper");
+            citizens.get(4).setRole(ARNOLD);
+            System.out.println(citizens.get(4).getUsername() + " is arnold");
+            citizens.get(5).setRole(THERAPIST);
+            System.out.println(citizens.get(5).getUsername() + " is therapist");
             gameData.hasMayor = true;
             gameData.hasSniper = true;
             gameData.hasArnold = true;
@@ -77,17 +95,22 @@ public class GameSetup
         }
         else if (citizenNum == 5)
         {
-            mafias.get(2).setRole(Role.SNIPER);
-            mafias.get(3).setRole(Role.ARNOLD);
-            mafias.get(4).setRole(Role.THERAPIST);
+            citizens.get(2).setRole(SNIPER);
+            System.out.println(citizens.get(2).getUsername() + " is sniper");
+            citizens.get(3).setRole(ARNOLD);
+            System.out.println(citizens.get(3).getUsername() + " is arnold");
+            citizens.get(4).setRole(THERAPIST);
+            System.out.println(citizens.get(4).getUsername() + " is therapist");
             gameData.hasSniper = true;
             gameData.hasArnold = true;
             gameData.hasTherapist = true;
         }
         else if (citizenNum == 4)
         {
-            mafias.get(2).setRole(Role.SNIPER);
-            mafias.get(3).setRole(Role.ARNOLD);
+            citizens.get(2).setRole(SNIPER);
+            System.out.println(citizens.get(2).getUsername() + " is sniper");
+            citizens.get(3).setRole(ARNOLD);
+            System.out.println(citizens.get(3).getUsername() + " is arnold");
             gameData.hasSniper = true;
             gameData.hasArnold = true;
         }

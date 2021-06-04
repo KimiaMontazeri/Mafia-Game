@@ -101,7 +101,7 @@ public class Client
             new WriteThread(socket, username).start();
         }
         catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("I/O ERROR OCCURRED");
         }
     }
 }

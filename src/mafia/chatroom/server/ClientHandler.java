@@ -4,6 +4,7 @@ import mafia.model.element.Message;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class ClientHandler implements Runnable
 {
@@ -101,9 +102,14 @@ public class ClientHandler implements Runnable
                 } while (clientMessage.getText().equals("exit"));
             }
         }
-        catch (IOException | ClassNotFoundException e)
-        {
-            e.printStackTrace();
+        catch (SocketException e) {
+            System.err.println("DISCONNECTED FROM CLIENT [" + username + "]");
+        }
+        catch (ClassNotFoundException e) {
+            System.err.println("ERROR OCCURRED IN CONVERTING OBJECT TO MESSAGE");
+        }
+        catch (IOException e) {
+            System.err.println("I/O ERROR OCCURRED");
         }
         server.removeClient(this);
     }

@@ -1,13 +1,13 @@
 package mafia.model.gamelogic;
 
-
-import mafia.chatroom.Server;
+import mafia.chatroom.server.Server;
 import mafia.model.GameData;
 import mafia.model.element.*;
 import static mafia.model.element.Phase.*;
 import static mafia.model.element.Role.*;
 import static mafia.model.GodMessages.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,6 +30,22 @@ public class GameManager // rules the game, gives the client handler the permiss
         votes = new HashSet<>();
     }
 
+    public boolean setUpTheServer()
+    {
+        // wait for clients to join
+        server.execute();
+        sendMsgFromGod("Time is up everyone!");
+        ArrayList<String> usernames = server.prepareGame();
+        if (usernames.size() < 4)
+        {
+            sendMsgFromGod("Cannot start the game with only " + usernames.size() + " players!");
+            return false;
+        }
+        // set up the game (create players in the gameData and set random roles to it)
+        GameSetup.initialize(server.prepareGame()); // sets the game's phase to NOT_STARTED
+        return true;
+    }
+
     public void wakeup(HashSet<Player> players)
     {
         if (players != null)
@@ -46,22 +62,6 @@ public class GameManager // rules the game, gives the client handler the permiss
             for (Player p : players)
                 p.goToSleep();
         }
-    }
-
-    public void wakeupMafias() {
-        wakeup(gameData.getMafias());
-    }
-
-    public void sleepMafias() {
-        sleep(gameData.getMafias());
-    }
-
-    public void wakeAllUp() {
-        wakeup(gameData.getAlivePlayers());
-    }
-
-    public void sleepAll() {
-        sleep(gameData.getAlivePlayers());
     }
 
     public void wakeupRole(Role role)
@@ -84,10 +84,8 @@ public class GameManager // rules the game, gives the client handler the permiss
         }
     }
 
-    public void sendMsgFromGod(String text)
-    {
+    public void sendMsgFromGod(String text) {
         server.broadcast(new Message(text, "GOD"));
-        // this method is also called from talkTo... methods in this class
     }
 
     public void nextPhase()
@@ -112,12 +110,12 @@ public class GameManager // rules the game, gives the client handler the permiss
     {
         if (gamePhase == INTRODUCTION_NIGHT)
         {
-            sleepAll();
+            sleep(gameData.getAlivePlayers());
 
             // introduce mafias
-            wakeupMafias();
+            wakeup(gameData.getMafias());
             sendMsgFromGod(welcomeMafias());
-            sleepMafias();
+            sleep(gameData.getMafias());
 
             // introduce godfather
             wakeupRole(GODFATHER);

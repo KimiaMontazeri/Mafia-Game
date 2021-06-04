@@ -1,12 +1,12 @@
 package mafia.model.element;
 
+import java.util.Objects;
+
 public class Player
 {
-    private boolean isMafia;  // used for counting the mafias and citizens
     private boolean isAlive;
     private boolean asleep;
     private boolean canSpeak; // used for when the therapist shushes a player
-    private boolean readyToPlay;
     private final String username;
     private Role role;
 
@@ -15,11 +15,6 @@ public class Player
         this.username = username;
         asleep = false;
         role = Role.UNKNOWN;
-        readyToPlay = false;
-    }
-
-    public boolean isMafia() {
-        return isMafia;
     }
 
     public boolean isAlive() {
@@ -34,12 +29,6 @@ public class Player
         return canSpeak;
     }
 
-    public void isReadyToPlay()
-    {
-        readyToPlay = true;
-        isAlive = true;
-    }
-
     public String getUsername() {
         return username;
     }
@@ -52,10 +41,8 @@ public class Player
         isAlive = false;
     }
 
-    public void setRole(Role role)
-    {
-        if (role == Role.UNKNOWN)
-            this.role = role;
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     public void goToSleep() {
@@ -65,7 +52,21 @@ public class Player
     public void wakeup() {
         asleep = false;
     }
+
     public void setCanSpeak(boolean canSpeak) {
         this.canSpeak = canSpeak;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Player)) return false;
+        Player player = (Player) o;
+        return getUsername().equals(player.getUsername());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getUsername(), getRole());
     }
 }

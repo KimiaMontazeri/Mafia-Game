@@ -5,6 +5,7 @@ import mafia.view.Display;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class ReadThread extends Thread
 {
@@ -18,7 +19,7 @@ public class ReadThread extends Thread
         this.username = username;
     }
 
-    public void openStreams()
+    public void openStreams() // TODO add throws IOException to the method's signature
     {
         try
         {
@@ -26,7 +27,7 @@ public class ReadThread extends Thread
             objectInputStream = new ObjectInputStream(input);
         }
         catch (IOException ex) {
-            ex.printStackTrace();
+            System.err.println("COULD NOT OPEN I/O STREAMS");
         }
     }
 
@@ -51,8 +52,15 @@ public class ReadThread extends Thread
 
                 // break from the loop if the game is ended
             }
-            catch (IOException | ClassNotFoundException e) {
+            catch (SocketException e) {
+                System.err.println("CONNECTION FAILED");
+                break;
+            }
+            catch (ClassNotFoundException e) {
                 System.err.println("Error reading from server :(");
+            }
+            catch (IOException e) {
+                System.out.println("I/O ERROR OCCURRED");
             }
         }
     }
