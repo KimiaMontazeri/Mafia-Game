@@ -8,8 +8,6 @@ import java.util.Scanner;
 
 public class Client
 {
-    // server's data
-    private Socket socket;
     private final int port;
 
     // streams
@@ -47,7 +45,7 @@ public class Client
     {
         Scanner scanner = new Scanner(System.in);
 
-        Display.print("Enter your name: ");
+        Display.print(dataInputStream.readUTF());
         String username;
         String serverResponse;
 
@@ -67,8 +65,7 @@ public class Client
         Scanner scanner = new Scanner(System.in);
 
         String answer = "";
-        String command = dataInputStream.readUTF();
-        Display.print(command);
+        Display.print(dataInputStream.readUTF());
 
         // wait for the client to get ready
         while (!answer.equals("ready")) {
@@ -84,11 +81,12 @@ public class Client
     {
         try
         {
-            socket = new Socket("127.0.0.1", port);
+            // server's data
+            Socket socket = new Socket("127.0.0.1", port);
             Display.print("Connected to the game!\n");
 
-            dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataInputStream = new DataInputStream(socket.getInputStream());
 
             // register
             username = register();
@@ -97,8 +95,8 @@ public class Client
             readyToPlay();
 
             // directed to the chatroom and the game will start
-            new ReadThread(socket, username).start();
-            new WriteThread(socket, username).start();
+            new WriteThread(socket, dataOutputStream).start();
+            new ReadThread(socket, username, dataInputStream).start();
         }
         catch (IOException e) {
             System.err.println("I/O ERROR OCCURRED");

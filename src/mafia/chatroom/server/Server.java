@@ -46,7 +46,7 @@ public class Server
             System.out.println("Server is listening on port " + port);
             RegisterHandler registerHandler = new RegisterHandler(this, serverSocket);
             registerHandler.start();
-            Thread.sleep(60000); // 2 min
+            Thread.sleep(120000); // 2 min
             registerHandler.isWaiting = false; // time is up, no more client can join the game
             System.out.println("Server is preparing the game, no more clients can join");
         }
@@ -88,6 +88,7 @@ public class Server
             // store the message in the gameData
             gameData.addMessage(message);
         }
+        System.out.println(message);
     }
 
     public void collectVote(Message message)
@@ -102,11 +103,8 @@ public class Server
         }
     }
 
-    private boolean canSendMessageTo(Map.Entry<ClientHandler, Boolean> entry, String sender)
-    {
-        return !gameData.isAsleep(entry.getKey().getUsername()) &&
-                entry.getValue() &&
-                !entry.getKey().getUsername().equals(sender);
+    private boolean canSendMessageTo(Map.Entry<ClientHandler, Boolean> entry, String sender) {
+        return !gameData.isAsleep(entry.getKey().getUsername());
     }
 
     private boolean canSendMessageFrom(String sender)

@@ -6,7 +6,7 @@ public class Display
 {
     public static void print(Message msg)
     {
-        System.out.print(msg);
+        System.out.print("\n" + msg);
     }
 
     public static void print(String text)

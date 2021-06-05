@@ -9,54 +9,43 @@ import java.util.Scanner;
 
 public class WriteThread extends Thread
 {
-    private ObjectOutputStream objectOutputStream;
-    private Socket socket;
-    private final String username;
+    private final DataOutputStream dataOutputStream;
 
-    public WriteThread(Socket socket, String username)
-    {
-        this.socket = socket;
-        this.username = username;
+    public WriteThread(Socket socket, DataOutputStream dataOutputStream) {
+        this.dataOutputStream = dataOutputStream;
     }
 
-    public void openStreams()
-    {
-        try
-        {
-            OutputStream out = socket.getOutputStream();
-            objectOutputStream = new ObjectOutputStream(out);
-        }
-        catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
+//    public void openStreams()
+//    {
+//        try
+//        {
+//            OutputStream out = socket.getOutputStream();
+//            objectOutputStream = new ObjectOutputStream(out);
+//        }
+//        catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
+//    }
 
     @Override
     public void run()
     {
-        openStreams();
         Scanner scanner = new Scanner(System.in);
-        while (true)
+        try
         {
-            try
+            String text;
+
+            do
             {
-                String text;
+                text = scanner.nextLine();
+                dataOutputStream.writeUTF(text);
+//                Message msg = new Message(text, username);
+//                objectOutputStream.writeObject(msg);
 
-                do
-                {
-                    text = scanner.nextLine();
-                    Message msg = new Message(text, username);
-                    objectOutputStream.writeObject(msg);
-
-                } while (!text.equals("exit")); // user won't be able to send messages if the exit the game
-            }
-            catch (SocketException e) {
-                System.err.println("CONNECTION FAILED");
-                break;
-            }
-            catch (IOException e) {
-                System.err.println("Error sending your message to the server :(");
-            }
+            } while (!text.equals("exit")); // user won't be able to send messages if they exit the game
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

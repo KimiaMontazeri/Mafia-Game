@@ -10,38 +10,43 @@ import java.net.SocketException;
 public class ReadThread extends Thread
 {
     private ObjectInputStream objectInputStream;
-    private Socket socket;
+
+    private DataInputStream dataInputStream;
+    private final Socket socket;
     private final String username;
 
-    public ReadThread(Socket socket, String username)
+    public ReadThread(Socket socket, String username, DataInputStream dataInputStream)
     {
         this.socket = socket;
         this.username = username;
+        this.dataInputStream = dataInputStream;
     }
 
-    public void openStreams() // TODO add throws IOException to the method's signature
-    {
-        try
-        {
-            InputStream input = socket.getInputStream();
-            objectInputStream = new ObjectInputStream(input);
-        }
-        catch (IOException ex) {
-            System.err.println("COULD NOT OPEN I/O STREAMS");
-        }
-    }
+//    public void openStreams() // TODO add throws IOException to the method's signature
+//    {
+//        try
+//        {
+//            InputStream input = socket.getInputStream();
+//            objectInputStream = new ObjectInputStream(input);
+//        }
+//        catch (IOException ex) {
+//            System.err.println("COULD NOT OPEN I/O STREAMS");
+//        }
+//    }
 
     @Override
     public void run()
     {
-        openStreams();
-        while (true)
+        try
         {
-            try
+            while (true)
             {
-                Message receivedMsg = (Message) objectInputStream.readObject();
-                // show the message to the client, if they are one of the receivers
-                Display.print(receivedMsg);
+                String text = dataInputStream.readUTF();
+                Display.print(text);
+
+//                Message receivedMsg = (Message) objectInputStream.readObject();
+//                // show the message to the client, if they are one of the receivers
+//                Display.print(receivedMsg);
 
                 // if statement below may be modified later
                 // prints the username after displaying the server's message
@@ -52,16 +57,9 @@ public class ReadThread extends Thread
 
                 // break from the loop if the game is ended
             }
-            catch (SocketException e) {
-                System.err.println("CONNECTION FAILED");
-                break;
-            }
-            catch (ClassNotFoundException e) {
-                System.err.println("Error reading from server :(");
-            }
-            catch (IOException e) {
-                System.out.println("I/O ERROR OCCURRED");
-            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

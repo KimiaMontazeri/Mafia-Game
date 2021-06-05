@@ -4,7 +4,6 @@ import mafia.model.element.Message;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 
 public class ClientHandler implements Runnable
 {
@@ -14,12 +13,8 @@ public class ClientHandler implements Runnable
     private final RegisterHandler registerHandler;
 
     // streams
-    private InputStream in;
-    private OutputStream out;
     private DataInputStream dataInputStream;
     private DataOutputStream dataOutputStream;
-    private ObjectInputStream objectInputStream;
-    private ObjectOutputStream objectOutputStream;
 
     // client's data
     private String username;
@@ -39,6 +34,7 @@ public class ClientHandler implements Runnable
     {
         if (this.username == null)
         {
+            dataOutputStream.writeUTF("Enter your name: ");
             String username = dataInputStream.readUTF();
             this.username = username;
 
@@ -50,7 +46,7 @@ public class ClientHandler implements Runnable
             }
             // notify the client that everything is fine
             dataOutputStream.writeUTF("Successfully registered!\n");
-            System.out.println("Client with username [" + username + "] got registered");
+            System.out.println("[" + username + "] got registered");
         }
     }
 
@@ -82,34 +78,29 @@ public class ClientHandler implements Runnable
     {
         try
         {
-            in = socket.getInputStream();
-            out = socket.getOutputStream();
-
-            dataInputStream = new DataInputStream(in);
-            dataOutputStream = new DataOutputStream(out);
+            dataInputStream = new DataInputStream(socket.getInputStream());
+            dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
             register();
             if (isReady())
             {
-                objectInputStream = new ObjectInputStream(in);
-                objectOutputStream = new ObjectOutputStream(out);
-
-                Message clientMessage;
-                do
-                {
-                    clientMessage = (Message) objectInputStream.readObject();
-                    server.broadcast(clientMessage);
-                } while (clientMessage.getText().equals("exit"));
+                String clientMsg;
+                do {
+                    clientMsg = dataInputStream.readUTF();
+                    server.broadcast(new Message(clientMsg, username));
+                } while (!clientMsg.equals("exit"));
+//                objectOutputStream = new ObjectOutputStream(out);
+//                objectInputStream = new ObjectInputStream(in);
+//
+//                Message clientMessage;
+//                do
+//                {
+//                    clientMessage = (Message) objectInputStream.readObject();
+//                    server.broadcast(clientMessage);
+//                } while (!clientMessage.getText().equals("exit"));
             }
-        }
-        catch (SocketException e) {
-            System.err.println("DISCONNECTED FROM CLIENT [" + username + "]");
-        }
-        catch (ClassNotFoundException e) {
-            System.err.println("ERROR OCCURRED IN CONVERTING OBJECT TO MESSAGE");
-        }
-        catch (IOException e) {
-            System.err.println("I/O ERROR OCCURRED");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         server.removeClient(this);
     }
@@ -117,10 +108,26 @@ public class ClientHandler implements Runnable
     public void sendMessage(Message msg)
     {
         try {
-            objectOutputStream.writeObject(msg);
+            dataOutputStream.writeUTF(msg.toString());
+//            objectOutputStream.writeObject(msg);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Message convertToMessage(String text)
+    {
+        StringBuilder sender = new StringBuilder();
+        int lastIndexOfSender = text.indexOf(':');
+        String content = text.substring(lastIndexOfSender + 1);
+        char[] chars = text.toCharArray();
+
+        for (int i = 0; i <= lastIndexOfSender; i++)
+        {
+            if (chars[i] != '[' && chars[i] != ']')
+                sender.append(chars[i]);
+        }
+        return new Message(sender.toString(), content);
     }
 
     /**

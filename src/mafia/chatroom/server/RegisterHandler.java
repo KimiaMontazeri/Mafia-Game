@@ -38,6 +38,7 @@ public class RegisterHandler extends Thread
                 e.printStackTrace();
             }
         }
+//        server.getPool().shutdown();
     }
 
     public synchronized boolean register(ClientHandler clientHandler)
