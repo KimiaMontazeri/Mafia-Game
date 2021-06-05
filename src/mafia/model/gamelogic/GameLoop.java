@@ -36,18 +36,12 @@ public class GameLoop
         // check game over after each night phase or election day
         while (!gameOver())
         {
-            /* mafia night and then check if the game is over or not
-               wake up the mafias and close other's eyes */
-
-            /* citizen night , open the eyes one oby one */
-
-            /* announcing the night result and waking everyone up */
-
-            /* day (chat mode, the god won't talk) */
-
-            /* election day (Collecting the votes) */
-
-            /* announcing the election result and then check if the game is over or not */
+            god.nextPhase();
+            god.doNightActs();
+            if (gameOver())
+                break;
+            god.nextPhase();
+            god.doDayActs();
         }
         end();
     }

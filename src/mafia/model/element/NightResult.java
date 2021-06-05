@@ -39,6 +39,13 @@ public class NightResult
         this.arnoldHadInquiry = arnoldHadInquiry;
     }
 
+    public boolean isProtectedByLector(Player player)
+    {
+        if (heals.containsKey(player))
+            return heals.get(player) == LECTOR;
+        return false;
+    }
+
     public void addMurder(Player killedPlayer, Role murderer)
     {
         if (murderer == MAFIA || murderer == GODFATHER || murderer == SNIPER)

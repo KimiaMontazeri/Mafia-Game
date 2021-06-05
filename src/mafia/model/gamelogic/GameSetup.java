@@ -119,6 +119,7 @@ public class GameSetup
             gameData.hasArnold = true;
         }
         // the game won't have sniper arnold mayor or therapist if the number of the citizens is less than 4
+        gameData.hasGodfather = gameData.hasDoctor = gameData.hasDetective = true;
         return players;
     }
 }

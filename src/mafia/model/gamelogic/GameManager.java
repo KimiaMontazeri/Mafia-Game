@@ -16,7 +16,7 @@ public class GameManager
     private final Server server;
     // game state
     private final GameData gameData;
-    private Phase gamePhase;
+    private Phase gamePhase; // TODO remove this field, change all gamePhase uses (use "current game phase" in gameData)
     // game details
     private NightResult nightResult;
 
@@ -91,16 +91,16 @@ public class GameManager
         switch (gamePhase)
         {
             case NOT_STARTED ->                       gamePhase = INTRODUCTION_NIGHT;
-            case INTRODUCTION_NIGHT, NIGHT_ARNOLD ->  gamePhase = DAY;
+            case INTRODUCTION_NIGHT, DAY_MAYOR ->     gamePhase = NIGHT_MAFIA;
             case DAY ->                               gamePhase = ELECTION_DAY;
             case ELECTION_DAY ->                      gamePhase = DAY_MAYOR;
-            case DAY_MAYOR ->                         gamePhase = NIGHT_MAFIA;
-            case NIGHT_MAFIA ->                       gamePhase = NIGHT_DOCTOR;
+            case NIGHT_MAFIA ->                       gamePhase = NIGHT_LECTOR;
+            case NIGHT_LECTOR ->                      gamePhase = NIGHT_DOCTOR;
             case NIGHT_DOCTOR ->                      gamePhase = NIGHT_DETECTIVE;
             case NIGHT_DETECTIVE ->                   gamePhase = NIGHT_SNIPER;
-            case NIGHT_SNIPER ->                      gamePhase = NIGHT_LECTOR;
-            case NIGHT_LECTOR ->                      gamePhase = NIGHT_THERAPIST;
+            case NIGHT_SNIPER ->                      gamePhase = NIGHT_THERAPIST;
             case NIGHT_THERAPIST ->                   gamePhase = NIGHT_ARNOLD;
+            case NIGHT_ARNOLD ->                      gamePhase = DAY;
         }
         // TODO add a message for each game phase in GodMessages and send a better message to the players
         if (gamePhase == INTRODUCTION_NIGHT || gamePhase == DAY || gamePhase == ELECTION_DAY )
@@ -185,155 +185,347 @@ public class GameManager
         }
     }
 
-    public Player election()
+    public void startElection()
     {
         if (gamePhase == NIGHT_MAFIA)
-        {
-            sendMsgFromGod("choose from these users");
-            server.startElection();
-            // TODO ask godfather to make the final decision
-
-            // some code ...
-
-            // final steps:
-            Election election = gameData.getLastElection();
-            Player candidate = gameData.findPlayer(election.calFinalResult());
-            nightResult.addMurder(candidate, MAFIA);
-            return candidate;
-        }
+            sendMsgFromGod("Who do you want to kill tonight?");
         else if (gamePhase == ELECTION_DAY)
-        {
-            sendMsgFromGod("choose from these users");
-            server.startElection();
+            sendMsgFromGod("Choose someone for the election");
 
-            Election election = gameData.getLastElection();
-            return gameData.findPlayer(election.calFinalResult());
-        }
-        return null;
+        gameData.setElectionIsOn(true);
+        gameData.setLastElection(new Election());
+
+        waiting(20000);
+        sendMsgFromGod("10 seconds left");
+        waiting(10000);
+        gameData.setElectionIsOn(false);
     }
 
-    public void kill()
+    // TODO return value unnecessary
+    public void godfatherDecision()
     {
+        Message godfatherMsg;
+        Player godfatherCandidate;
+        gameData.getLastElection().setMafiaElection(true);
 
+        if (gamePhase == NIGHT_MAFIA)
+        {
+            if (gameData.getMafias().size() == 1 || !gameData.hasGodfather)
+                godfatherCandidate = gameData.getLastElection().calFinalResult();
+            else
+            {
+                // asking godfather to make the final decision
+                sleep(MAFIA);
+                wakeup(GODFATHER);
+                sendMsgFromGod(gameData.getLastElection().toString());
+                sendMsgFromGod("What's the final decision:\n");
+
+                waiting(10000);
+                godfatherMsg = gameData.getLastMessage();
+                // if godfather did not answer, god will calculate the final result
+                if (gameData.findPlayer(godfatherMsg.getSender()).getRole() != GODFATHER) {
+                    godfatherCandidate = gameData.getLastElection().calFinalResult();
+                }
+                // godfather has answered
+                else
+                {
+                    godfatherCandidate = gameData.findPlayer(godfatherMsg.getText());
+                    // if godfather's answer is invalid, god will calculate the final result
+                    if (godfatherCandidate == null)
+                        godfatherCandidate = gameData.getLastElection().calFinalResult();
+                    else gameData.getLastElection().setFinalCandidate(godfatherCandidate);
+                }
+                sleep(GODFATHER);
+            }
+            kill(godfatherCandidate, MAFIA);
+        }
+    }
+
+    public void kill(Player target, Role murderer)
+    {
+        if (target != null)
+        {
+            // handling roles that can heal themselves for one time in the game
+            if (target.getRole() == DOCTOR && !gameData.doctorHasHealedHimself)
+                gameData.doctorHasHealedHimself = true;
+            else if (target.getRole() == LECTOR && !gameData.lectorHasHealedHimself)
+                gameData.lectorHasHealedHimself = true;
+            else if (target.getRole() == ARNOLD && !gameData.mafiaHasShootArnold && murderer == MAFIA)
+                gameData.mafiaHasShootArnold = true;
+            else if (!nightResult.isProtectedByLector(target))
+                nightResult.addMurder(target, murderer);
+        }
+    }
+
+    public void shoot()
+    {
+        if (gamePhase == NIGHT_SNIPER)
+        {
+            wakeup(SNIPER);
+            sendMsgFromGod("Do you want to shoot anyone? (yes/no)\n");
+            waiting(10000);
+            Message answer = gameData.getLastMessage();
+            // if the sniper does not reply in this 5 seconds, god will move on to the next night action
+            if (gameData.findPlayer(answer.getSender()).getRole() == SNIPER)
+            {
+                if (answer.getText().equalsIgnoreCase("yes"))
+                {
+                    sendMsgFromGod("Who do you want to kill?\n");
+                    waiting(10000);
+                    answer = gameData.getLastMessage();
+                    Player target = gameData.findPlayer(answer.getText());
+
+                    if (target != null)
+                    {
+                        if (target.getRole() != MAFIA && target.getRole() != GODFATHER && target.getRole() != LECTOR)
+                        {
+                            sendMsgFromGod("""
+                                Oops! You killed one of your team mates buddy...
+                                You get removed from the game...
+                                """);
+                            nightResult.addRemovedPlayer(gameData.findPlayer(SNIPER));
+                        }
+                        else kill(target, SNIPER);
+                    }
+                }
+            }
+            sleep(SNIPER);
+        }
     }
 
     public void heal()
     {
+        if (gamePhase == NIGHT_DOCTOR)
+        {
+            wakeup(DOCTOR);
+            sendMsgFromGod("Who do you want to heal tonight?\n");
+            waiting(10000);
+            Message answer = gameData.getLastMessage();
+            Player target;
+            if (gameData.findPlayer(answer.getSender()).getRole() == DOCTOR)
+            {
+                target = gameData.findPlayer(answer.getText());
+                if (target != null && nightResult.getMurders().containsKey(target))
+                {
+                    sendMsgFromGod("You saved " + target.getUsername() + " !\n");
+                    nightResult.addHeal(target, DOCTOR);
+                }
+            }
+            sleep(DOCTOR);
+        }
+    }
 
+    public void protect()
+    {
+        if (gamePhase == NIGHT_LECTOR)
+        {
+            wakeup(LECTOR);
+            sendMsgFromGod("Which one of the mafias do you want to protect from the sniper?\n");
+            waiting(10000);
+            Message answer = gameData.getLastMessage();
+            Player target;
+            if (gameData.findPlayer(answer.getSender()).getRole() == LECTOR)
+            {
+                target = gameData.findPlayer(answer.getText());
+                // check if the target exists in the game and is on mafia team
+                if (target != null && (target.getRole() == MAFIA || target.getRole() == GODFATHER))
+                    nightResult.addHeal(target, LECTOR);
+            }
+            sleep(LECTOR);
+        }
     }
 
     public void detectPlayers()
     {
+        if (gamePhase == NIGHT_DETECTIVE)
+        {
+            Message lastMessage;
+            Player sender;
 
+            wakeup(DETECTIVE);
+            sendMsgFromGod("Whose role do you want to find out?");
+            waiting(3000);
+            lastMessage = gameData.getLastMessage();
+            sender = gameData.findPlayer(lastMessage.getSender());
+
+            if (sender.getRole() == DETECTIVE)
+            {
+                Player target = gameData.findPlayer(lastMessage.getText());
+                if (target != null)
+                {
+                    if (target.getRole() == GODFATHER || target.getRole() == CITIZEN)
+                        sendMsgFromGod("Cannot tell you " + target.getUsername() + " role!");
+                    else
+                        sendMsgFromGod(target.getUsername() + " is " + target.getRole());
+                }
+            }
+            sleep(DETECTIVE);
+        }
     }
 
     public void silent()
     {
-
+        if (gamePhase == NIGHT_THERAPIST)
+        {
+            wakeup(THERAPIST);
+            sendMsgFromGod("Do you want to silent anyone? (yes/no)\n");
+            waiting(10000);
+            Message answer = gameData.getLastMessage();
+            if (gameData.findPlayer(answer.getSender()).getRole() == THERAPIST)
+            {
+                sendMsgFromGod("Who do you want to silent?\n");
+                waiting(10000);
+                answer = gameData.getLastMessage();
+                Player target = gameData.findPlayer(answer.getText());
+                if (target != null)
+                {
+                    sendMsgFromGod(target.getUsername() + " is silenced for the next day\n");
+                    target.setCanSpeak(false); // TODO tell the target that they cannot speak for the next day
+                }
+            }
+            sleep(THERAPIST);
+        }
     }
 
     public void inquiry()
     {
+        if (gamePhase == NIGHT_ARNOLD)
+        {
+            if (gameData.arnoldInquiries == 2)
+                return;
+            wakeup(ARNOLD);
+            sendMsgFromGod("Do you want to know the removed roles? (yes/no)\n");
+            waiting(10000);
+            Message answer = gameData.getLastMessage();
+            if (gameData.findPlayer(answer.getSender()).getRole() == ARNOLD
+                    && answer.getText().equalsIgnoreCase("yes"))
+            {
+                sendMsgFromGod("I will tell you the list of removed roles in the morning\n");
+                nightResult.setArnoldHadInquiry(true);
+                gameData.arnoldInquiries++;
+            }
+            sleep(ARNOLD);
+        }
+    }
+
+    /**
+     * Removes all the dead/removed players from "gameData.alivePlayers"
+     * Adds them to "gameData.deadPlayers"
+     */
+    public void analyzeNightResult()
+    {
 
     }
 
-    public boolean cancelElection(Player candidate)
+    public boolean cancelElection()
     {
+        boolean cancel = false;
         if (gamePhase == DAY_MAYOR)
         {
             wakeup(MAYOR);
-            // TODO some code
+            sendMsgFromGod("Are you ok with the election? (yes/no)");
+            waiting(10000); // wait for the mayor to answer
+            Message answer = gameData.getLastMessage();
+            if (gameData.findPlayer(answer.getSender()).getRole() == MAYOR)
+            {
+                cancel = answer.getText().equalsIgnoreCase("yes")
+                        || answer.getText().equalsIgnoreCase("ok");
+            }
             sleep(MAYOR);
-            return true;
         }
-        return false;
+        return cancel;
     }
 
-    public void kickOut(Player candidate)
+    // TODO complete this
+    public void goodbye(Player removedPlayer)
     {
-        // TODO complete this method
-        gameData.getAlivePlayers().remove(candidate);
-        gameData.getDeadPlayers().add(candidate);
+        gameData.getAlivePlayers().remove(removedPlayer);
+        gameData.getDeadPlayers().add(removedPlayer);
+        // TODO notify the player that they got removed from the game and ask them if they want to stay as a viewer or leave
     }
 
     public void doNightActs()
     {
         if (gamePhase == NIGHT_MAFIA)
         {
-            wakeup(gameData.getMafias());
-            election();
-            kill();
+            // first, we need to set the prev silenced player's "canSpeak" to true
+            if (gameData.getLastSilencedPlayer() != null)
+                gameData.getLastSilencedPlayer().setCanSpeak(true);
+
+            wakeup(MAFIA);
+            startElection();
+            godfatherDecision();
             sleep(gameData.getMafias());
         }
-        else return;
+        else return; // the method should continue doing its tasks only if the current phase is night mafia
         nextPhase();
 
-        wakeup(DOCTOR);
-        heal();
-        sleep(DOCTOR);
+        if (gameData.hasLector) protect();
         nextPhase();
 
-        wakeup(DETECTIVE);
-        detectPlayers();
-        sleep(DETECTIVE);
+        if (gameData.hasDoctor) heal();
         nextPhase();
 
-        wakeup(SNIPER);
-        kill();
-        sleep(SNIPER);
+        if (gameData.hasDetective) detectPlayers();
         nextPhase();
 
-        if (nightResult.hasSniperKill())
-        {
-            wakeup(LECTOR);
-            heal();
-            sleep(LECTOR);
-        }
+        if (gameData.hasSniper) shoot();
         nextPhase();
 
-        wakeup(THERAPIST);
-        silent();
-        sleep(THERAPIST);
+        if (gameData.hasTherapist) silent();
         nextPhase();
 
-        wakeup(ARNOLD);
-        inquiry();
-        sleep(ARNOLD);
+        if (gameData.hasArnold) inquiry();
 
-        wakeup(gameData.getAlivePlayers());
-        sendMsgFromGod(nightResult.toString()); // or call announceNightResult() 
-        sleep(gameData.getAlivePlayers());
+        analyzeNightResult();
+        announceNightResult();
     }
 
-    public void announceNightResult() {
+    public void announceNightResult()
+    {
+        wakeup(gameData.getAlivePlayers());
         sendMsgFromGod(nightResult.toString());
+        sleep(gameData.getAlivePlayers());
     }
 
     public void doDayActs()
     {
+        waiting(3000); // just for the flow of the game
         wakeup(gameData.getAlivePlayers());
         sendMsgFromGod("""
                 CHATROOM mode
-                Discuss whoever you think might have to be removed from the game...
+                Discuss whoever you think might have to get removed from the game...
                 Note that you only have 90 seconds until the election time!
                 """);
+        waiting(80000);
+        sendMsgFromGod("You've got 10 seconds left!\n");
+        waiting(10000);
+
+        startElection();
+        Player candidate = gameData.getLastElection().calFinalResult();
+        sleep(gameData.getAlivePlayers());
+        if (gameData.hasMayor)
+        {
+            if (cancelElection()) // the mayor canceled the election
+            {
+                wakeup(gameData.getAlivePlayers());
+                sendMsgFromGod("The election is canceled!");
+                sleep(gameData.getAlivePlayers());
+                return;
+            }
+        }
+        goodbye(candidate);
+        wakeup(gameData.getAlivePlayers());
+        sendMsgFromGod(candidate.getUsername() + " got removed from the game!");
+        sleep(gameData.getAlivePlayers());
+    }
+
+    public void waiting(long ms)
+    {
         try {
-            Thread.sleep(90000);
+            Thread.sleep(ms);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        Player candidate = election();
-        // if the election didn't get canceled by the mayor, kick out the candidate from the game
-        sleep(gameData.getAlivePlayers());
-        if (!cancelElection(candidate))
-        {
-            // wake up the person who has to get kicked out (is the returned variable of election)
-            kickOut(candidate); // this method is called if the election has not got canceled
-            wakeup(gameData.getAlivePlayers());
-            // TODO notify the players that the candidate got removed from the game
-        }
-        wakeup(gameData.getAlivePlayers());
-        // TODO notify the players that the election is canceled
-        sleep(gameData.getAlivePlayers());
     }
 }

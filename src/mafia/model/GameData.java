@@ -15,18 +15,20 @@ public class GameData implements Serializable // used for saving the game
     private final HashSet<Player> deadPlayers;
     private final HashSet<Player> alivePlayers;
     private Phase currentPhase;
+    private boolean electionIsOn;
     private Election lastElection;
+    private Player lastSilencedPlayer;
 
     public boolean lectorHasHealedHimself;
     public boolean doctorHasHealedHimself;
     public boolean mafiaHasShootArnold;
-    private int arnoldInquiries;
+    public int arnoldInquiries;
 
     private Winner winner;
     private ArrayList<Message> oldMessages; // add each message to this arrayList
     private final MessageAccessor messageAccessor;
 
-    public boolean hasLector, hasMayor, hasArnold, hasSniper, hasTherapist;
+    public boolean hasLector, hasMayor, hasArnold, hasSniper, hasTherapist, hasGodfather, hasDoctor, hasDetective;
 
     public static GameData getInstance()
     {
@@ -43,9 +45,10 @@ public class GameData implements Serializable // used for saving the game
         alivePlayers = new HashSet<>();
         oldMessages = new ArrayList<>();
         currentPhase = NOT_STARTED;
+        electionIsOn = false;
         winner = Winner.UNKNOWN;
 
-        hasLector = hasMayor = hasArnold = hasSniper = hasTherapist = false;
+        hasLector = hasMayor = hasArnold = hasSniper = hasTherapist = hasGodfather = hasDoctor = hasDetective = false;
         lectorHasHealedHimself = doctorHasHealedHimself = mafiaHasShootArnold = false;
         arnoldInquiries = 0;
 
@@ -61,12 +64,20 @@ public class GameData implements Serializable // used for saving the game
         return alivePlayers;
     }
 
-    public Phase getCurrentMood() {
+    public Phase getCurrentPhase() {
         return currentPhase;
+    }
+
+    public boolean electionIsOn() {
+        return electionIsOn;
     }
 
     public Election getLastElection() {
         return lastElection;
+    }
+
+    public Player getLastSilencedPlayer() {
+        return lastSilencedPlayer;
     }
 
     public int getArnoldInquiries() {
@@ -99,8 +110,16 @@ public class GameData implements Serializable // used for saving the game
         this.currentPhase = currentMood;
     }
 
+    public void setElectionIsOn(boolean electionIsOn) {
+        this.electionIsOn = electionIsOn;
+    }
+
     public void setLastElection(Election lastElection) {
         this.lastElection = lastElection;
+    }
+
+    public void setLastSilencedPlayer(Player lastSilencedPlayer) {
+        this.lastSilencedPlayer = lastSilencedPlayer;
     }
 
     public void setWinner(Winner winner) {
@@ -113,15 +132,6 @@ public class GameData implements Serializable // used for saving the game
 
     public void readOldMessages() {
         oldMessages = messageAccessor.readMessages();
-    }
-
-    public boolean incrementArnoldInquiries()
-    {
-        if (arnoldInquiries == 0 || arnoldInquiries == 1) {
-            arnoldInquiries++;
-            return true;
-        }
-        return false;
     }
 
     public HashSet<Player> getMafias()

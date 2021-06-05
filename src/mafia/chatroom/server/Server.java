@@ -1,7 +1,6 @@
 package mafia.chatroom.server;
 
 import mafia.model.GameData;
-import mafia.model.element.Election;
 import mafia.model.element.Message;
 
 import java.io.IOException;
@@ -22,7 +21,6 @@ public class Server
 
     // game properties
     private final GameData gameData;
-    private boolean electionIsOn = false;
 
     public Server(int port)
     {
@@ -37,10 +35,6 @@ public class Server
 
     public ExecutorService getPool() {
         return pool;
-    }
-
-    public boolean electionIsOn() {
-        return electionIsOn;
     }
 
     public void execute()
@@ -61,23 +55,6 @@ public class Server
         }
     }
 
-    public void startElection()
-    {
-        // god has told players that it's time to vote
-        electionIsOn = true;
-        gameData.setLastElection(new Election());
-        try {
-            Thread.sleep(20000);
-            broadcast(new Message("10 seconds left from the election!", "GOD"));
-            Thread.sleep(10000);
-            broadcast(new Message("Election time has ended!", "GOD"));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            electionIsOn = false;
-        }
-    }
-
     public ArrayList<String> prepareGame()
     {
         ArrayList<String> usernames = new ArrayList<>();
@@ -90,25 +67,23 @@ public class Server
         return usernames;
     }
 
-    // god calls this method when he wants to ask a yes no question from player(s)
-    public void yesNoQuestion(Message message)
-    {
-
-    }
-
     public synchronized void broadcast(Message message)
     {
         // check if the sender is alive and can speak or is the game's God
         String sender = message.getSender();
         if (canSendMessageFrom(sender))
         {
-            if (electionIsOn) collectVote(message);
-            // check if the receivers are awake (Asleep players won't receive the message)
-            for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
+            if (gameData.electionIsOn() && !sender.equals("GOD"))
+                collectVote(message); // no need to broadcast the votes to others
+            else
             {
-                // send the message to the awake players (also, check if the player is online)
-                if (canSendMessageTo(entry, sender))
-                    entry.getKey().sendMessage(message);
+                // check if the receivers are awake (Asleep players won't receive the message)
+                for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
+                {
+                    // send the message to the awake players (also, check if the player is online)
+                    if (canSendMessageTo(entry, sender))
+                        entry.getKey().sendMessage(message);
+                }
             }
             // store the message in the gameData
             gameData.addMessage(message);
@@ -119,7 +94,7 @@ public class Server
     {
         String candidate = message.getText();
         if (usernameExists(candidate))
-            gameData.getLastElection().addVote(message.getSender(), candidate);
+            gameData.getLastElection().addVote(gameData.findPlayer(message.getSender()), gameData.findPlayer(candidate));
         else
         {
             Message errorMsg = new Message("Your chosen candidate is invalid! Try again: ", "GOD");
@@ -166,6 +141,7 @@ public class Server
         users.put(clientHandler, false);
     }
 
+    // TODO make the return value void
     public synchronized boolean addReadyClient(ClientHandler clientHandler)
     {
         if (users.containsKey(clientHandler))
