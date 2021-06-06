@@ -31,6 +31,7 @@ public class WriteThread extends Thread
                 dataOutputStream.writeUTF(text);
 
             } while (!text.equals("exit")); // user won't be able to send messages if they exit the game
+            dataOutputStream.writeUTF("DISCONNECT");
         }
         catch (IOException e) {
             e.printStackTrace();

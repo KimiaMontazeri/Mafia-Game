@@ -29,8 +29,9 @@ public class GameLoop
     private void end()
     {
         // announce the winner to all the players and end the whole game
+        god.wakeup(gameData.getAlivePlayers());
         god.sendMsgFromGod("The game has ended\nThe winner is " + gameData.getWinner());
-        // TODO READ FROM THE SAVED MESSAGES
+        god.sendMsgFromGod(gameData.loadMessages());
     }
 
     private void loop()

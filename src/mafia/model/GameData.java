@@ -26,7 +26,6 @@ public class GameData implements Serializable // used for saving the game
     public int arnoldInquiries;
 
     private Winner winner;
-    private ArrayList<Message> oldMessages; // add each message to this arrayList
     private final MessageAccessor messageAccessor;
 
     public boolean hasLector, hasMayor, hasArnold, hasSniper, hasTherapist, hasGodfather, hasDoctor, hasDetective;
@@ -44,7 +43,6 @@ public class GameData implements Serializable // used for saving the game
     {
         deadPlayers = new HashSet<>();
         alivePlayers = new HashSet<>();
-        oldMessages = new ArrayList<>();
         currentPhase = NOT_STARTED;
         electionIsOn = false;
         winner = Winner.UNKNOWN;
@@ -65,6 +63,18 @@ public class GameData implements Serializable // used for saving the game
         return alivePlayers;
     }
 
+    /**
+     * this method is used for when we want to notify the users about the list of all the current alive players
+     * @return alive players' usernames
+     */
+    public String getListOfAlivePlayers()
+    {
+        StringBuilder result = new StringBuilder();
+        for (Player p : alivePlayers)
+            result.append(p.getUsername()).append("  ");
+        return result.toString();
+    }
+
     public Phase getCurrentPhase() {
         return currentPhase;
     }
@@ -77,21 +87,21 @@ public class GameData implements Serializable // used for saving the game
         return lastElection;
     }
 
+    public NightResult getLastNightResult() {
+        return lastNightResult;
+    }
+
     public Winner getWinner() {
         return winner;
     }
 
-    public ArrayList<Message> getOldMessages() {
-        return oldMessages;
-    }
-
     public Message getLastMessage() {
-        return oldMessages.get(oldMessages.size() - 1);
+        return messageAccessor.getLastMsg();
     }
 
     public void addMessage(Message message) {
         if (message != null)
-            oldMessages.add(message);
+            messageAccessor.addMsg(message);
     }
 
     public void setAlivePlayers(ArrayList<Player> players) {
@@ -119,12 +129,8 @@ public class GameData implements Serializable // used for saving the game
         this.winner = winner;
     }
 
-    public void saveMessages() {
-        messageAccessor.saveMessages(oldMessages);
-    }
-
-    public void readOldMessages() {
-        oldMessages = messageAccessor.readMessages();
+    public String loadMessages() {
+        return messageAccessor.loadGameMessages();
     }
 
     public HashSet<Player> getMafias()

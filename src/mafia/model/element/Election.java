@@ -47,13 +47,22 @@ public class Election //TODO change votes to -> HashMap<Player, Player>
      * Used for the day_elections (final result of mafia elections are determined by the godfather)
      * @return the username of the final candidate
      */
-    public Player calFinalResult()
+    public Player calFinalResult() // TODO incomplete
     {
+        HashMap<Player, Integer> candidateResult = new HashMap<>();
         if (finalCandidate == null)
         {
-            //        Set<String> candidates = new HashSet<>(votes.values());
-            // TODO complete this method
-            return null;
+            for (Player candidate : votes.values())
+            {
+                if (candidateResult.containsKey(candidate))
+                {
+
+                }
+                else
+                {
+                    candidateResult.put(candidate, 1);
+                }
+            }
         }
         return finalCandidate;
     }

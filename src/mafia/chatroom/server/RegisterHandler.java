@@ -3,6 +3,7 @@ package mafia.chatroom.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 /**
  * This class handles registering the clients in the game
@@ -34,11 +35,13 @@ public class RegisterHandler extends Thread
                 ClientHandler newUser = new ClientHandler(socket, server, this);
                 server.getPool().execute(newUser);
             }
+            catch (SocketException e) {
+                System.out.println("Game has ended, server is closed");
+            }
             catch (IOException e) {
                 e.printStackTrace();
             }
         }
-//        server.getPool().shutdown();
     }
 
     public synchronized boolean register(ClientHandler clientHandler)
@@ -50,8 +53,8 @@ public class RegisterHandler extends Thread
         return true;
     }
 
-    public synchronized boolean addReadyClient(ClientHandler clientHandler) {
-        return server.addReadyClient(clientHandler);
+    public synchronized void addReadyClient(ClientHandler clientHandler) {
+        server.addReadyClient(clientHandler);
     }
 
 }

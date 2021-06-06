@@ -89,11 +89,11 @@ public class NightResult
     {
         StringBuilder str = new StringBuilder();
         if (murders.size() == 0)
-            str.append("No body got killed last night :|");
+            str.append("Nobody got killed last night :|");
 
         else
         {
-            str.append("We found the bodies of [ ");
+            str.append("We found the body/bodies of [ ");
             for (Player killedPlayer : murders.keySet())
                 str.append(killedPlayer.getUsername()).append(" ");
             str.append("] last night 😲");

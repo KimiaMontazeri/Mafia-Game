@@ -32,6 +32,10 @@ public class Server
         return users;
     }
 
+    public GameData getGameData() {
+        return gameData;
+    }
+
     public ExecutorService getPool() {
         return pool;
     }
@@ -47,6 +51,7 @@ public class Server
             Thread.sleep(120000); // 2 min
             registerHandler.isWaiting = false; // time is up, no more client can join the game
             System.out.println("Server is preparing the game, no more clients can join");
+            pool.shutdown();
         }
         catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -98,15 +103,14 @@ public class Server
         {
             gameData.getLastElection().addVote(gameData.findPlayer(message.getSender()), gameData.findPlayer(candidate));
             answer = new Message("Your vote has been recorded in the game, " +
-                    "but you can still change it until the voting time is over\n", "GOD");
-            findClientHandler(message.getSender()).sendMessage(answer);
+                    "but you can still change it until the voting time is over", "GOD");
         }
         else
         {
             answer = new Message("Your chosen candidate is invalid! " +
-                    "You can try again until the voting time is over\n", "GOD");
-            findClientHandler(message.getSender()).sendMessage(answer);
+                    "You can try again until the voting time is over", "GOD");
         }
+        findClientHandler(message.getSender()).sendMessage(answer);
     }
 
     private boolean canSendMessageTo(Map.Entry<ClientHandler, Boolean> entry) {
@@ -119,17 +123,10 @@ public class Server
                                     &&  gameData.isAwake(sender));
     }
 
-    public synchronized boolean usernameExists(String username)
-    {
-        for (ClientHandler clientHandler : users.keySet())
-        {
-            if (clientHandler.getUsername().equals(username))
-                return true;
-        }
-        return false;
+    public synchronized boolean usernameExists(String username) {
+        return findClientHandler(username) != null;
     }
 
-    // TODO make this method and its above method into one single method with return ClientHandler
     public ClientHandler findClientHandler(String username)
     {
         for (ClientHandler clientHandler : users.keySet())
@@ -144,28 +141,14 @@ public class Server
         users.put(clientHandler, false);
     }
 
-    // TODO make the return value void
-    public synchronized boolean addReadyClient(ClientHandler clientHandler)
+    public synchronized void addReadyClient(ClientHandler clientHandler)
     {
         if (users.containsKey(clientHandler))
-        {
             users.put(clientHandler, true);
-            return true;
-        }
-        return false;
     }
 
-    public synchronized void removeClient(ClientHandler clientHandler)
-    {
-        // remove the corresponding player from gameData
-        users.remove(clientHandler);
-        // terminate the client thread (the method called below is not complete yet)
-        clientHandler.terminate();
-    }
-
-    public void shutDownClient(String username)
-    {
-        findClientHandler(username);
+    public void shutDownClient(String username) {
+        users.remove(findClientHandler(username));
     }
 
     // TODO add methods to check if a client has got disconnected and handle it

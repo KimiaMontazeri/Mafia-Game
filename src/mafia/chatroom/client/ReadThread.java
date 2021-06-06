@@ -28,11 +28,11 @@ public class ReadThread extends Thread
             {
                 String text = dataInputStream.readUTF();
                 Display.print(text);
-                // break from the loop if the game is ended
             }
         }
         catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // remove this at last
+            System.err.println("Got disconnected from the game!");
         }
     }
 }

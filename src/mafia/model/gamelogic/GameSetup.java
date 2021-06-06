@@ -52,7 +52,7 @@ public class GameSetup
             if (chosenPlayer.getRole() == UNKNOWN)
             {
                 chosenPlayer.setRole(MAFIA);
-                mafias.add(chosenPlayer); // remove kon -_-
+                mafias.add(chosenPlayer);
             }
             else i--;
         }
@@ -67,7 +67,7 @@ public class GameSetup
 
         // setting mafia roles to the mafias
         mafias.get(0).setRole(GODFATHER);
-        if (mafiaNum > 3)
+        if (mafiaNum >= 3)
         {
             mafias.get(1).setRole(LECTOR);
             gameData.hasLector = true;

@@ -383,10 +383,8 @@ public class GameManager
                 {
                     sendMsgFromGod(target.getUsername() + " is silenced for the next day");
                     target.setCanSpeak(false);
+                    nightResult.setSilencedPlayer(target);
                     sleep(THERAPIST);
-                    target.wakeup();
-                    sendMsgFromGod("You are silenced for the next day :(");
-                    target.goToSleep();
                 }
             }
             sleep(THERAPIST);
@@ -471,11 +469,17 @@ public class GameManager
 
     public void doNightActs()
     {
+        wakeup(gameData.getAlivePlayers());
+        sendMsgFromGod("Alive players: " + gameData.getListOfAlivePlayers());
         sleep(gameData.getAlivePlayers());
         // first, we need to set the prev silenced player's "canSpeak" to true
-        Player lastSilencedPlayer = nightResult.getSilencedPlayer();
-        if (lastSilencedPlayer != null)
-            lastSilencedPlayer.setCanSpeak(true);
+        nightResult = gameData.getLastNightResult();
+        if (nightResult != null)
+        {
+            Player lastSilencedPlayer = nightResult.getSilencedPlayer();
+            if (lastSilencedPlayer != null)
+                lastSilencedPlayer.setCanSpeak(true);
+        }
         nightResult = new NightResult();
         if (gamePhase == NIGHT_MAFIA)
         {
@@ -528,6 +532,7 @@ public class GameManager
     public void doDayActs()
     {
         wakeup(gameData.getAlivePlayers());
+        sendMsgFromGod("Alive players: " + gameData.getListOfAlivePlayers());
         sendMsgFromGod("""
                 CHATROOM mode
                 Discuss whoever your think might have to get removed from the game...
