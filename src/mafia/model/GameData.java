@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+// TODO add the message methods to the class message accessor (store messages in a linked list)
 public class GameData implements Serializable // used for saving the game
 {
     private static GameData instance = null;
@@ -17,7 +18,7 @@ public class GameData implements Serializable // used for saving the game
     private Phase currentPhase;
     private boolean electionIsOn;
     private Election lastElection;
-    private Player lastSilencedPlayer;
+    private NightResult lastNightResult;
 
     public boolean lectorHasHealedHimself;
     public boolean doctorHasHealedHimself;
@@ -76,14 +77,6 @@ public class GameData implements Serializable // used for saving the game
         return lastElection;
     }
 
-    public Player getLastSilencedPlayer() {
-        return lastSilencedPlayer;
-    }
-
-    public int getArnoldInquiries() {
-        return arnoldInquiries;
-    }
-
     public Winner getWinner() {
         return winner;
     }
@@ -106,7 +99,7 @@ public class GameData implements Serializable // used for saving the game
             alivePlayers.addAll(players);
     }
 
-    public void setCurrentMood(Phase currentMood) {
+    public void setCurrentPhase(Phase currentMood) {
         this.currentPhase = currentMood;
     }
 
@@ -118,8 +111,8 @@ public class GameData implements Serializable // used for saving the game
         this.lastElection = lastElection;
     }
 
-    public void setLastSilencedPlayer(Player lastSilencedPlayer) {
-        this.lastSilencedPlayer = lastSilencedPlayer;
+    public void setLastNightResult(NightResult lastNightResult) {
+        this.lastNightResult = lastNightResult;
     }
 
     public void setWinner(Winner winner) {
@@ -170,16 +163,13 @@ public class GameData implements Serializable // used for saving the game
                 || role == ARNOLD || role == THERAPIST;
     }
 
-    public boolean isAsleep(String username)
+    public boolean isAwake(String username)
     {
         for (Player p : alivePlayers)
         {
-            // if p is the wanted player
             if (p.getUsername().equals(username))
-                return p.isAsleep();
+                return !p.isAsleep();
         }
-        // if this line is reached, the given username is not in the game
-        System.out.println(username + " is not in the database!");
         return false;
     }
 
@@ -193,32 +183,28 @@ public class GameData implements Serializable // used for saving the game
         return false;
     }
 
-    public boolean isAlive(String username)
-    {
-        for (Player p : alivePlayers)
-        {
-            if (p.getUsername().equals(username))
-                return p.isAlive();
-        }
-        return false;
-    }
-
     public Player findPlayer(String username)
     {
-        for (Player p : alivePlayers)
+        if (username != null)
         {
-            if (p.getUsername().equals(username))
-                return p;
+            for (Player p : alivePlayers)
+            {
+                if (p.getUsername().equals(username))
+                    return p;
+            }
         }
         return null;
     }
 
     public Player findPlayer(Role role)
     {
-        for (Player p : alivePlayers)
+        if (role != null)
         {
-            if (p.getRole() == role)
-                return p;
+            for (Player p : alivePlayers)
+            {
+                if (p.getRole() == role)
+                    return p;
+            }
         }
         return null;
     }

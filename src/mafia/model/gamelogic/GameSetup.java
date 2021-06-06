@@ -76,7 +76,7 @@ public class GameSetup
         // setting citizen roles to the citizens
         citizens.get(0).setRole(DOCTOR);
         citizens.get(1).setRole(DETECTIVE);
-        if (citizenNum > 5)
+        if (citizenNum > 6)
         {
             citizens.get(2).setRole(MAYOR);
             citizens.get(3).setRole(SNIPER);
@@ -87,7 +87,7 @@ public class GameSetup
             gameData.hasArnold = true;
             gameData.hasTherapist = true;
         }
-        else if (citizenNum == 5)
+        else if (citizenNum == 6)
         {
             citizens.get(2).setRole(SNIPER);
             citizens.get(3).setRole(ARNOLD);
@@ -96,7 +96,7 @@ public class GameSetup
             gameData.hasArnold = true;
             gameData.hasTherapist = true;
         }
-        else if (citizenNum == 4)
+        else if (citizenNum == 5)
         {
             citizens.get(2).setRole(SNIPER);
             citizens.get(3).setRole(ARNOLD);

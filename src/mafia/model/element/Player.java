@@ -4,9 +4,8 @@ import java.util.Objects;
 
 public class Player
 {
-    private boolean isAlive;
     private boolean asleep;
-    private boolean canSpeak; // used for when the therapist shushes a player
+    private boolean canSpeak; // used for when the therapist silents a player or player gets removed from the game
     private final String username;
     private Role role;
 
@@ -14,11 +13,8 @@ public class Player
     {
         this.username = username;
         asleep = false;
+        canSpeak = true;
         role = Role.UNKNOWN;
-    }
-
-    public boolean isAlive() {
-        return isAlive;
     }
 
     public boolean isAsleep() {
@@ -35,10 +31,6 @@ public class Player
 
     public Role getRole() {
         return role;
-    }
-
-    public void getKilled() {
-        isAlive = false;
     }
 
     public void setRole(Role role) {
@@ -68,5 +60,10 @@ public class Player
     @Override
     public int hashCode() {
         return Objects.hash(getUsername(), getRole());
+    }
+
+    @Override
+    public String toString() {
+        return username;
     }
 }

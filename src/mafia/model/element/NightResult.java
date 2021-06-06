@@ -12,6 +12,7 @@ public class NightResult
     private final HashMap<Player, Role> heals; // healed player -> normal doctor/doctor lector
     private final Set<Player> removedPlayers;
     private boolean arnoldHadInquiry = false;
+    private Player silencedPlayer;
 
     public NightResult() {
         murders = new HashMap<>();
@@ -35,8 +36,16 @@ public class NightResult
         return arnoldHadInquiry;
     }
 
+    public Player getSilencedPlayer() {
+        return silencedPlayer;
+    }
+
     public void setArnoldHadInquiry(boolean arnoldHadInquiry) {
         this.arnoldHadInquiry = arnoldHadInquiry;
+    }
+
+    public void setSilencedPlayer(Player silencedPlayer) {
+        this.silencedPlayer = silencedPlayer;
     }
 
     public boolean isProtectedByLector(Player player)
@@ -79,17 +88,26 @@ public class NightResult
     public String toString()
     {
         StringBuilder str = new StringBuilder();
-        for (Player killedPlayer : murders.keySet())
-            str.append(killedPlayer.getUsername()).append(" ");
-        str.append("'s body(ies) was/were found last night 😲!\n");
+        if (murders.size() == 0)
+            str.append("No body got killed last night :|");
+
+        else
+        {
+            str.append("We found the bodies of [ ");
+            for (Player killedPlayer : murders.keySet())
+                str.append(killedPlayer.getUsername()).append(" ");
+            str.append("] last night 😲");
+        }
 
         // checking if the list is empty because no one may get removed from the game at night
         if (!removedPlayers.isEmpty())
         {
             for (Player removedPlayer : removedPlayers)
                 str.append(removedPlayer.getUsername()).append(" ");
-            str.append(" got removed from the game!");
+            str.append("got removed from the game!");
         }
+        if (silencedPlayer != null)
+            str.append("\n").append(silencedPlayer.getUsername()).append(" got silenced for the next day");
         return str.toString();
     }
 }

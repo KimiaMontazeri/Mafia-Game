@@ -62,13 +62,11 @@ public class Election //TODO change votes to -> HashMap<Player, Player>
     {
         StringBuilder result = new StringBuilder();
 
-        result.append("---------------------------\n");
         for (Map.Entry<Player, Player> entry : votes.entrySet())
         {
-            result.append(entry.getKey().getUsername()).append(" -> ").append(entry.getValue());
+            result.append(entry.getKey().getUsername()).append(" -> ").append(entry.getValue().getUsername());
             result.append("\n");
         }
-        result.append("---------------------------\n");
         return result.toString();
     }
 

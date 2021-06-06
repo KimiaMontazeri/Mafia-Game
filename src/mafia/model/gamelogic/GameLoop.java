@@ -17,7 +17,7 @@ public class GameLoop
     public void start()
     {
         // if the game can be started
-        if (god.setUpTheServer())
+        if (god.launch())
         {
             god.nextPhase(); // switches from "NOT_STARTED" to "INTRODUCTION_NIGHT"
             god.introduce(); // welcomes each player to the game and tell them their roles
@@ -29,6 +29,8 @@ public class GameLoop
     private void end()
     {
         // announce the winner to all the players and end the whole game
+        god.sendMsgFromGod("The game has ended\nThe winner is " + gameData.getWinner());
+        // TODO READ FROM THE SAVED MESSAGES
     }
 
     private void loop()
@@ -36,10 +38,14 @@ public class GameLoop
         // check game over after each night phase or election day
         while (!gameOver())
         {
+            god.waiting(30000); // for the flow of the game
             god.nextPhase();
             god.doNightActs();
+
             if (gameOver())
                 break;
+
+            god.waiting(30000); // for the flow of the game
             god.nextPhase();
             god.doDayActs();
         }

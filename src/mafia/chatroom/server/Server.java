@@ -13,7 +13,6 @@ public class Server
 {
     // server properties
     private final int port;
-    private ServerSocket serverSocket;
     private ExecutorService pool;
 
     // user properties
@@ -40,9 +39,8 @@ public class Server
     public void execute()
     {
         pool = Executors.newCachedThreadPool();
-        try
+        try (ServerSocket serverSocket = new ServerSocket(port))
         {
-            serverSocket = new ServerSocket(port);
             System.out.println("Server is listening on port " + port);
             RegisterHandler registerHandler = new RegisterHandler(this, serverSocket);
             registerHandler.start();
@@ -81,37 +79,44 @@ public class Server
                 for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
                 {
                     // send the message to the awake players (also, check if the player is online)
-                    if (canSendMessageTo(entry, sender))
+                    if (canSendMessageTo(entry))
                         entry.getKey().sendMessage(message);
                 }
             }
-            // store the message in the gameData
-            gameData.addMessage(message);
+            // store the player's messages in the gameData
+            if (!sender.equals("GOD"))
+                gameData.addMessage(message);
+            System.out.println(message);
         }
-        System.out.println(message);
     }
 
     public void collectVote(Message message)
     {
         String candidate = message.getText();
+        Message answer;
         if (usernameExists(candidate))
+        {
             gameData.getLastElection().addVote(gameData.findPlayer(message.getSender()), gameData.findPlayer(candidate));
+            answer = new Message("Your vote has been recorded in the game, " +
+                    "but you can still change it until the voting time is over\n", "GOD");
+            findClientHandler(message.getSender()).sendMessage(answer);
+        }
         else
         {
-            Message errorMsg = new Message("Your chosen candidate is invalid! Try again: ", "GOD");
-            findClientHandler(message.getSender()).sendMessage(errorMsg);
+            answer = new Message("Your chosen candidate is invalid! " +
+                    "You can try again until the voting time is over\n", "GOD");
+            findClientHandler(message.getSender()).sendMessage(answer);
         }
     }
 
-    private boolean canSendMessageTo(Map.Entry<ClientHandler, Boolean> entry, String sender) {
-        return !gameData.isAsleep(entry.getKey().getUsername());
+    private boolean canSendMessageTo(Map.Entry<ClientHandler, Boolean> entry) {
+        return gameData.isAwake(entry.getKey().getUsername()) && entry.getValue();
     }
 
     private boolean canSendMessageFrom(String sender)
     {
         return sender.equals("GOD") || (gameData.canSpeak(sender)
-                                    && !gameData.isAsleep(sender)
-                                    && gameData.isAlive(sender));
+                                    &&  gameData.isAwake(sender));
     }
 
     public synchronized boolean usernameExists(String username)
@@ -156,6 +161,11 @@ public class Server
         users.remove(clientHandler);
         // terminate the client thread (the method called below is not complete yet)
         clientHandler.terminate();
+    }
+
+    public void shutDownClient(String username)
+    {
+        findClientHandler(username);
     }
 
     // TODO add methods to check if a client has got disconnected and handle it

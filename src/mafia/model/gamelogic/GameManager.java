@@ -9,6 +9,7 @@ import static mafia.model.GodMessages.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 public class GameManager
 {
@@ -16,7 +17,7 @@ public class GameManager
     private final Server server;
     // game state
     private final GameData gameData;
-    private Phase gamePhase; // TODO remove this field, change all gamePhase uses (use "current game phase" in gameData)
+    private Phase gamePhase;
     // game details
     private NightResult nightResult;
 
@@ -27,15 +28,16 @@ public class GameManager
         gamePhase = NOT_STARTED;
     }
 
-    public boolean setUpTheServer()
+    public boolean launch()
     {
         // wait for clients to join
         server.execute();
-        sendMsgFromGod("Time is up everyone!");
+        sendMsgFromGod("No more player can join!");
         ArrayList<String> usernames = server.prepareGame();
         if (usernames.size() < 4)
         {
             sendMsgFromGod("Cannot start the game with only " + usernames.size() + " players!");
+            // TODO the game is canceled, shut down the program
             return false;
         }
         // set up the game (create players in the gameData and set random roles to it)
@@ -106,8 +108,10 @@ public class GameManager
         if (gamePhase == INTRODUCTION_NIGHT || gamePhase == DAY || gamePhase == ELECTION_DAY )
         {
             // notify the players about the game's phase
-            sendMsgFromGod("GAME PHASE : " + gamePhase + "\n");
+            sendMsgFromGod("GAME PHASE -> " + gamePhase);
         }
+        // update the game's phase in the gameData
+        gameData.setCurrentPhase(gamePhase);
     }
 
     public void introduce()
@@ -201,7 +205,6 @@ public class GameManager
         gameData.setElectionIsOn(false);
     }
 
-    // TODO return value unnecessary
     public void godfatherDecision()
     {
         Message godfatherMsg;
@@ -218,10 +221,11 @@ public class GameManager
                 sleep(MAFIA);
                 wakeup(GODFATHER);
                 sendMsgFromGod(gameData.getLastElection().toString());
-                sendMsgFromGod("What's the final decision:\n");
+                sendMsgFromGod("What's the final decision:");
 
-                waiting(10000);
+                waiting(20000);
                 godfatherMsg = gameData.getLastMessage();
+                System.out.println("godfather msg: " + godfatherMsg);
                 // if godfather did not answer, god will calculate the final result
                 if (gameData.findPlayer(godfatherMsg.getSender()).getRole() != GODFATHER) {
                     godfatherCandidate = gameData.getLastElection().calFinalResult();
@@ -262,15 +266,15 @@ public class GameManager
         if (gamePhase == NIGHT_SNIPER)
         {
             wakeup(SNIPER);
-            sendMsgFromGod("Do you want to shoot anyone? (yes/no)\n");
-            waiting(10000);
+            sendMsgFromGod("Do you want to shoot anyone? (yes/no)");
+            waiting(20000);
             Message answer = gameData.getLastMessage();
-            // if the sniper does not reply in this 5 seconds, god will move on to the next night action
+            // if the sniper does not reply in this 30 seconds, god will move on to the next night action
             if (gameData.findPlayer(answer.getSender()).getRole() == SNIPER)
             {
                 if (answer.getText().equalsIgnoreCase("yes"))
                 {
-                    sendMsgFromGod("Who do you want to kill?\n");
+                    sendMsgFromGod("Who do you want to kill?");
                     waiting(10000);
                     answer = gameData.getLastMessage();
                     Player target = gameData.findPlayer(answer.getText());
@@ -279,10 +283,8 @@ public class GameManager
                     {
                         if (target.getRole() != MAFIA && target.getRole() != GODFATHER && target.getRole() != LECTOR)
                         {
-                            sendMsgFromGod("""
-                                Oops! You killed one of your team mates buddy...
-                                You get removed from the game...
-                                """);
+                            sendMsgFromGod("Oops! You killed one of your team mates buddy...\n" +
+                                    "You get removed from the game...");
                             nightResult.addRemovedPlayer(gameData.findPlayer(SNIPER));
                         }
                         else kill(target, SNIPER);
@@ -298,8 +300,8 @@ public class GameManager
         if (gamePhase == NIGHT_DOCTOR)
         {
             wakeup(DOCTOR);
-            sendMsgFromGod("Who do you want to heal tonight?\n");
-            waiting(10000);
+            sendMsgFromGod("Who do you want to heal tonight?");
+            waiting(20000);
             Message answer = gameData.getLastMessage();
             Player target;
             if (gameData.findPlayer(answer.getSender()).getRole() == DOCTOR)
@@ -307,7 +309,7 @@ public class GameManager
                 target = gameData.findPlayer(answer.getText());
                 if (target != null && nightResult.getMurders().containsKey(target))
                 {
-                    sendMsgFromGod("You saved " + target.getUsername() + " !\n");
+                    sendMsgFromGod("You saved " + target.getUsername() + " !");
                     nightResult.addHeal(target, DOCTOR);
                 }
             }
@@ -320,8 +322,8 @@ public class GameManager
         if (gamePhase == NIGHT_LECTOR)
         {
             wakeup(LECTOR);
-            sendMsgFromGod("Which one of the mafias do you want to protect from the sniper?\n");
-            waiting(10000);
+            sendMsgFromGod("Which one of the mafias do you want to protect from the sniper?");
+            waiting(20000);
             Message answer = gameData.getLastMessage();
             Player target;
             if (gameData.findPlayer(answer.getSender()).getRole() == LECTOR)
@@ -344,7 +346,7 @@ public class GameManager
 
             wakeup(DETECTIVE);
             sendMsgFromGod("Whose role do you want to find out?");
-            waiting(3000);
+            waiting(20000);
             lastMessage = gameData.getLastMessage();
             sender = gameData.findPlayer(lastMessage.getSender());
 
@@ -368,19 +370,23 @@ public class GameManager
         if (gamePhase == NIGHT_THERAPIST)
         {
             wakeup(THERAPIST);
-            sendMsgFromGod("Do you want to silent anyone? (yes/no)\n");
-            waiting(10000);
+            sendMsgFromGod("Do you want to silent anyone? (yes/no)");
+            waiting(20000);
             Message answer = gameData.getLastMessage();
             if (gameData.findPlayer(answer.getSender()).getRole() == THERAPIST)
             {
-                sendMsgFromGod("Who do you want to silent?\n");
+                sendMsgFromGod("Who do you want to silent?");
                 waiting(10000);
                 answer = gameData.getLastMessage();
                 Player target = gameData.findPlayer(answer.getText());
                 if (target != null)
                 {
-                    sendMsgFromGod(target.getUsername() + " is silenced for the next day\n");
-                    target.setCanSpeak(false); // TODO tell the target that they cannot speak for the next day
+                    sendMsgFromGod(target.getUsername() + " is silenced for the next day");
+                    target.setCanSpeak(false);
+                    sleep(THERAPIST);
+                    target.wakeup();
+                    sendMsgFromGod("You are silenced for the next day :(");
+                    target.goToSleep();
                 }
             }
             sleep(THERAPIST);
@@ -389,18 +395,16 @@ public class GameManager
 
     public void inquiry()
     {
-        if (gamePhase == NIGHT_ARNOLD)
+        if (gamePhase == NIGHT_ARNOLD && !gameData.getDeadPlayers().isEmpty() && gameData.arnoldInquiries < 2)
         {
-            if (gameData.arnoldInquiries == 2)
-                return;
             wakeup(ARNOLD);
-            sendMsgFromGod("Do you want to know the removed roles? (yes/no)\n");
-            waiting(10000);
+            sendMsgFromGod("Do you want to know the removed roles? (yes/no)");
+            waiting(20000);
             Message answer = gameData.getLastMessage();
             if (gameData.findPlayer(answer.getSender()).getRole() == ARNOLD
                     && answer.getText().equalsIgnoreCase("yes"))
             {
-                sendMsgFromGod("I will tell you the list of removed roles in the morning\n");
+                sendMsgFromGod("I will tell you the list of removed roles in the morning");
                 nightResult.setArnoldHadInquiry(true);
                 gameData.arnoldInquiries++;
             }
@@ -414,7 +418,20 @@ public class GameManager
      */
     public void analyzeNightResult()
     {
-
+        for (Map.Entry<Player, Role> entry : nightResult.getHeals().entrySet())
+        {
+            entry.getKey().wakeup();
+            sendMsgFromGod("You were about to die! But " + entry.getValue() + " saved your life :)");
+            entry.getKey().goToSleep();
+        }
+        for (Map.Entry<Player, Role> entry : nightResult.getMurders().entrySet())
+        {
+            entry.getKey().wakeup();;
+            sendMsgFromGod(entry.getValue() + " killed you!");
+            goodbye(entry.getKey());
+        }
+        for (Player p : nightResult.getRemovedPlayers())
+            goodbye(p);
     }
 
     public boolean cancelElection()
@@ -424,7 +441,7 @@ public class GameManager
         {
             wakeup(MAYOR);
             sendMsgFromGod("Are you ok with the election? (yes/no)");
-            waiting(10000); // wait for the mayor to answer
+            waiting(20000); // wait for the mayor to answer
             Message answer = gameData.getLastMessage();
             if (gameData.findPlayer(answer.getSender()).getRole() == MAYOR)
             {
@@ -436,22 +453,32 @@ public class GameManager
         return cancel;
     }
 
-    // TODO complete this
     public void goodbye(Player removedPlayer)
     {
+        removedPlayer.wakeup();
+        sendMsgFromGod("Enter anything if you want to stay as a viewer (You can't talk anymore though)...");
+        waiting(20000);
+
+        if (!gameData.getLastMessage().getSender().equals(removedPlayer.getUsername())) {
+            // removes the player's corresponding client handler from the server
+            server.shutDownClient(removedPlayer.getUsername());
+        }
+        else removedPlayer.setCanSpeak(false);
+
         gameData.getAlivePlayers().remove(removedPlayer);
         gameData.getDeadPlayers().add(removedPlayer);
-        // TODO notify the player that they got removed from the game and ask them if they want to stay as a viewer or leave
     }
 
     public void doNightActs()
     {
+        sleep(gameData.getAlivePlayers());
+        // first, we need to set the prev silenced player's "canSpeak" to true
+        Player lastSilencedPlayer = nightResult.getSilencedPlayer();
+        if (lastSilencedPlayer != null)
+            lastSilencedPlayer.setCanSpeak(true);
+        nightResult = new NightResult();
         if (gamePhase == NIGHT_MAFIA)
         {
-            // first, we need to set the prev silenced player's "canSpeak" to true
-            if (gameData.getLastSilencedPlayer() != null)
-                gameData.getLastSilencedPlayer().setCanSpeak(true);
-
             wakeup(MAFIA);
             startElection();
             godfatherDecision();
@@ -479,6 +506,7 @@ public class GameManager
 
         analyzeNightResult();
         announceNightResult();
+        gameData.setLastNightResult(nightResult);
     }
 
     public void announceNightResult()
@@ -486,21 +514,30 @@ public class GameManager
         wakeup(gameData.getAlivePlayers());
         sendMsgFromGod(nightResult.toString());
         sleep(gameData.getAlivePlayers());
+        if (nightResult.arnoldHadInquiry())
+        {
+            wakeup(ARNOLD);
+            StringBuilder inquiry = new StringBuilder("The removed roles are:\n");
+            for (Player p : gameData.getDeadPlayers())
+                inquiry.append(p.getRole()).append(", ");
+            sendMsgFromGod(inquiry.toString());
+            sleep(ARNOLD);
+        }
     }
 
     public void doDayActs()
     {
-        waiting(3000); // just for the flow of the game
         wakeup(gameData.getAlivePlayers());
         sendMsgFromGod("""
                 CHATROOM mode
-                Discuss whoever you think might have to get removed from the game...
-                Note that you only have 90 seconds until the election time!
-                """);
+                Discuss whoever your think might have to get removed from the game...
+                Note that you only have 90 seconds until the election time!""");
+
         waiting(80000);
-        sendMsgFromGod("You've got 10 seconds left!\n");
+        sendMsgFromGod("You've got 10 seconds left!");
         waiting(10000);
 
+        nextPhase();
         startElection();
         Player candidate = gameData.getLastElection().calFinalResult();
         sleep(gameData.getAlivePlayers());

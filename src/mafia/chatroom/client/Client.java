@@ -96,7 +96,7 @@ public class Client
 
             // directed to the chatroom and the game will start
             new WriteThread(socket, dataOutputStream).start();
-            new ReadThread(socket, username, dataInputStream).start();
+            new ReadThread(socket, dataInputStream).start();
         }
         catch (IOException e) {
             System.err.println("I/O ERROR OCCURRED");
