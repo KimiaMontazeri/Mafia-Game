@@ -1,6 +1,7 @@
 package mafia.chatroom.server;
 
 import mafia.model.element.Message;
+import mafia.model.utils.Cache;
 
 import java.io.*;
 import java.net.Socket;
@@ -11,7 +12,6 @@ public class ClientHandler implements Runnable
     private final Socket socket;
     private final Server server;
     private final RegisterHandler registerHandler;
-    private boolean isRegistered;
 
     // streams
     private DataInputStream dataInputStream;
@@ -19,6 +19,8 @@ public class ClientHandler implements Runnable
 
     // client's data
     private String username;
+    private boolean isRegistered;
+    private Cache msgHistory;
 
     public ClientHandler(Socket socket, Server server, RegisterHandler registerHandler)
     {
@@ -34,7 +36,7 @@ public class ClientHandler implements Runnable
 
     public void register() throws IOException
     {
-        if (this.username == null)
+        if (!isRegistered) // or this.username == null
         {
             dataOutputStream.writeUTF("Enter your name: ");
             String username = dataInputStream.readUTF();
@@ -50,30 +52,9 @@ public class ClientHandler implements Runnable
             dataOutputStream.writeUTF("Successfully registered!\n");
             System.out.println("[" + username + "] got registered");
             isRegistered = true;
+            msgHistory = new Cache(username); // creates a new file with the client's name
         }
     }
-
-//    public void ready() throws IOException
-//    {
-//        String answer = "";
-//
-//        dataOutputStream.writeUTF("Type 'ready' if you want to play\n");
-//        answer = dataInputStream.readUTF();
-//        if (answer.equalsIgnoreCase("ready"))
-//        {
-//            if (!registerHandler.addReadyClient(this)) {
-//                dataOutputStream.writeUTF("You are not registered in the game!");
-//            }
-//            else
-//            {
-//                dataOutputStream.writeUTF("""
-//                    You are added to the game's members!
-//                    Waiting for others to join, the game will start in just a moment...
-//                    """);
-//                System.out.println("[" + username + "] is ready to play");
-//            }
-//        }
-//    }
 
     @Override
     public void run()
@@ -88,20 +69,10 @@ public class ClientHandler implements Runnable
             do {
                 clientMsg = dataInputStream.readUTF();
                 result = handleCommands(clientMsg);
+                if (isRegistered)
+                    msgHistory.addMessage(clientMsg);  // writes the client's messages to file
             } while (result); // client has exited the game
 
-//            register();
-//            if (isReady())
-//            {
-//                String clientMsg;
-//                do {
-//                    clientMsg = dataInputStream.readUTF();
-//                    if (clientMsg.equals("REVIEW")){
-//                        server.getGameData().loadMessages();
-//                    }
-//                    server.broadcast(new Message(clientMsg, username));
-//                } while (!clientMsg.equals("exit"));
-//            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -112,6 +83,7 @@ public class ClientHandler implements Runnable
     {
         try {
             dataOutputStream.writeUTF(msg.toString());
+            msgHistory.addMessage(msg.toString()); // writes the server's messages to file
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -136,40 +108,43 @@ public class ClientHandler implements Runnable
     {
         switch (command.toUpperCase())
         {
-            case "REGISTER":
+            case "REGISTER" -> {
                 register();
                 return true;
-            case "READY":
-                if (isRegistered)
-                {
+            }
+            case "READY" -> {
+                if (isRegistered) {
                     registerHandler.addReadyClient(this);
                     dataOutputStream.writeUTF("You are added to the game's members!\n" +
                             "Waiting for others to join, the game will start in just a moment...");
                     System.out.println("[" + username + "] is ready to play");
-                }
-                else dataOutputStream.writeUTF("Register first!");
+                } else dataOutputStream.writeUTF("Register first!");
                 return true;
-            case "REVIEW":
-                dataOutputStream.writeUTF(server.getGameData().loadMessages());
+            }
+            case "HISTORY" -> {
+                dataOutputStream.writeUTF("HISTORY\n" + msgHistory.getHistory());
                 return true;
-            case "HELP":
+            }
+            case "HELP" -> {
                 dataOutputStream.writeUTF("""
                         Game's commands are:
-                        REGISTER
-                        READY
-                        REVIEW (for getting the chat history)
-                        EXIT (for exiting the game)""");
+                        REGISTER -> Register in the game
+                        READY -> Declare that you're all set to start the game
+                        HISTORY -> for getting the chat history
+                        EXIT -> for exiting the game""");
                 return true;
-            case "EXIT":
-                dataOutputStream.writeUTF("Bye");
-                return false;
-            case "DISCONNECT":
+            }
+            case "EXIT", "DISCONNECT" -> {
+                dataOutputStream.writeUTF("You left the game :( See you next time!");
                 server.broadcast(new Message("Left the game", username));
                 server.getUsers().remove(this);
-            default:
+                return false;
+            }
+            default -> {
                 if (isRegistered)
                     server.broadcast(new Message(command, username));
                 return true;
+            }
         }
     }
 

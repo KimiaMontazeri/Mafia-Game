@@ -27,7 +27,12 @@ public class ReadThread extends Thread
             while (true)
             {
                 String text = dataInputStream.readUTF();
-                Display.print(text);
+                if (text.equals("DISCONNECT"))
+                    break;
+                if (text.contains("HISTORY"))
+                    Display.displayHistory(text);
+                else
+                    Display.print(text);
             }
         }
         catch (IOException e) {

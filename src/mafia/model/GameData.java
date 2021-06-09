@@ -3,7 +3,6 @@ package mafia.model;
 import mafia.model.element.*;
 import static mafia.model.element.Role.*;
 import static mafia.model.element.Phase.*;
-import mafia.model.utils.MessageAccessor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,7 +25,7 @@ public class GameData implements Serializable // used for saving the game
     public int arnoldInquiries;
 
     private Winner winner;
-    private final MessageAccessor messageAccessor;
+    private final ArrayList<Message> messages;
 
     public boolean hasLector, hasMayor, hasArnold, hasSniper, hasTherapist, hasGodfather, hasDoctor, hasDetective;
 
@@ -46,12 +45,12 @@ public class GameData implements Serializable // used for saving the game
         currentPhase = NOT_STARTED;
         electionIsOn = false;
         winner = Winner.UNKNOWN;
+        messages = new ArrayList<>();
 
         hasLector = hasMayor = hasArnold = hasSniper = hasTherapist = hasGodfather = hasDoctor = hasDetective = false;
         lectorHasHealedHimself = doctorHasHealedHimself = mafiaHasShootArnold = false;
         arnoldInquiries = 0;
 
-        messageAccessor = new MessageAccessor();
     }
 
     // getters and setters
@@ -96,12 +95,12 @@ public class GameData implements Serializable // used for saving the game
     }
 
     public Message getLastMessage() {
-        return messageAccessor.getLastMsg();
+        return messages.get(messages.size() - 1);
     }
 
     public void addMessage(Message message) {
         if (message != null)
-            messageAccessor.addMsg(message);
+            messages.add(message);
     }
 
     public void setAlivePlayers(ArrayList<Player> players) {
@@ -127,10 +126,6 @@ public class GameData implements Serializable // used for saving the game
 
     public void setWinner(Winner winner) {
         this.winner = winner;
-    }
-
-    public String loadMessages() {
-        return messageAccessor.loadGameMessages();
     }
 
     public HashSet<Player> getMafias()
@@ -171,10 +166,17 @@ public class GameData implements Serializable // used for saving the game
 
     public boolean isAwake(String username)
     {
+        // check if the player is in the dead players
         for (Player p : alivePlayers)
         {
             if (p.getUsername().equals(username))
                 return !p.isAsleep();
+        }
+        // dead players are awake as long as the game continues, and they can receive all the messages but they cannot talk
+        for (Player p : deadPlayers)
+        {
+            if (p.getUsername().equals(username))
+                return true;
         }
         return false;
     }
