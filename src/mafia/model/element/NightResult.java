@@ -56,18 +56,25 @@ public class NightResult
     }
 
     public void addMurder(Player killedPlayer, Role murderer)
-    {
-        if (murderer == MAFIA || murderer == GODFATHER || murderer == SNIPER)
+    { // the murderer has to be checked (they can only be in mafia team or a sniper)
+        if (murderer == MAFIA || murderer == GODFATHER)
             murders.put(killedPlayer, murderer);
+        else if (murderer == SNIPER)
+        {
+            if (!heals.containsKey(killedPlayer)) // the sniper won't be able to kill a protected mafia
+                murders.put(killedPlayer, murderer);
+        }
     }
 
     public void addHeal(Player healedPlayer, Role healer)
     {
-        if (murders.containsKey(healedPlayer))
+        if (murders.containsKey(healedPlayer) && healer == DOCTOR)
         {
             murders.remove(healedPlayer);
             heals.put(healedPlayer, healer);
         }
+        else if (healer == LECTOR)
+            heals.put(healedPlayer, healer);
     }
 
     public void addRemovedPlayer(Player player) {

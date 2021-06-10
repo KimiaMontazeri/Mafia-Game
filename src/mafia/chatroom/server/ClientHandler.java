@@ -19,7 +19,7 @@ public class ClientHandler implements Runnable
 
     // client's data
     private String username;
-    private boolean isRegistered;
+    private boolean isRegistered, isReady;
     private Cache msgHistory;
 
     public ClientHandler(Socket socket, Server server, RegisterHandler registerHandler)
@@ -28,6 +28,7 @@ public class ClientHandler implements Runnable
         this.server = server;
         this.registerHandler = registerHandler;
         isRegistered = false;
+        isReady = false;
     }
 
     public String getUsername() {
@@ -76,14 +77,17 @@ public class ClientHandler implements Runnable
         } catch (IOException e) {
             e.printStackTrace();
         }
-        server.getUsers().remove(this);
+//        server.getUsers().remove(this);
     }
 
     public void sendMessage(Message msg)
     {
         try {
-            dataOutputStream.writeUTF(msg.toString());
-            msgHistory.addMessage(msg.toString()); // writes the server's messages to file
+            if (handleCommands(msg.toString()))
+            {
+                dataOutputStream.writeUTF(msg.toString());
+                msgHistory.addMessage(msg.toString()); // writes the server's messages to file
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -113,12 +117,18 @@ public class ClientHandler implements Runnable
                 return true;
             }
             case "READY" -> {
-                if (isRegistered) {
+                if (isRegistered && !isReady) {
                     registerHandler.addReadyClient(this);
-                    dataOutputStream.writeUTF("You are added to the game's members!\n" +
-                            "Waiting for others to join, the game will start in just a moment...");
+                    dataOutputStream.writeUTF("""
+                            You are added to the game's members!
+                            Waiting for others to join, the game will start in just a moment...
+                            """);
+                    isReady = true;
                     System.out.println("[" + username + "] is ready to play");
-                } else dataOutputStream.writeUTF("Register first!");
+                } else if (isRegistered)
+                    dataOutputStream.writeUTF("You have been added to the game's members before!");
+                else
+                    dataOutputStream.writeUTF("Register first!");
                 return true;
             }
             case "HISTORY" -> {

@@ -1,10 +1,8 @@
 package mafia.model.element;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class Election //TODO change votes to -> HashMap<Player, Player>
+public class Election
 {
     private final HashMap<Player, Player> votes;   // voter -> candidate
     private Player finalCandidate;
@@ -47,22 +45,24 @@ public class Election //TODO change votes to -> HashMap<Player, Player>
      * Used for the day_elections (final result of mafia elections are determined by the godfather)
      * @return the username of the final candidate
      */
-    public Player calFinalResult() // TODO incomplete
+    public Player calFinalResult()
     {
-        HashMap<Player, Integer> candidateResult = new HashMap<>();
+        Map<Player, Integer> candidateResult = new HashMap<>();
+        int numOfVotes;
         if (finalCandidate == null)
         {
             for (Player candidate : votes.values())
             {
                 if (candidateResult.containsKey(candidate))
                 {
-
+                    numOfVotes = candidateResult.get(candidate);
+                    candidateResult.replace(candidate, ++numOfVotes);
                 }
-                else
-                {
-                    candidateResult.put(candidate, 1);
-                }
+                else candidateResult.put(candidate, 1);
             }
+
+            candidateResult = sort(candidateResult);
+            return findMax(candidateResult);
         }
         return finalCandidate;
     }
@@ -77,6 +77,34 @@ public class Election //TODO change votes to -> HashMap<Player, Player>
             result.append("\n");
         }
         return result.toString();
+    }
+
+    private Map<Player, Integer> sort(Map<Player, Integer> map)
+    {
+        List<Map.Entry<Player, Integer>> list = new ArrayList<>(map.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+
+        Map<Player, Integer> result = new LinkedHashMap<>();
+        for (Map.Entry<Player, Integer> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+
+        return result;
+    }
+
+    private Player findMax(Map<Player, Integer> map)
+    {
+        Player result = null;
+        int max = 0;
+        for (Map.Entry<Player, Integer> entry : map.entrySet())
+        {
+            if (entry.getValue() > max)
+            {
+                result = entry.getKey();
+                max = entry.getValue();
+            }
+        }
+        return result;
     }
 
 }
