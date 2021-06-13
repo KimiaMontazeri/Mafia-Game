@@ -31,10 +31,13 @@ public class WriteThread extends Thread
                 dataOutputStream.writeUTF(text);
 
             } while (!text.equals("exit")); // user won't be able to send messages if they exit the game
-            dataOutputStream.writeUTF("DISCONNECT");
-        }
-        catch (IOException e) {
+            socket.close(); // not sure
+        } catch (SocketException e) {
+            System.err.println("Got disconnected from the game");
             e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("I/O error occurred");
+            e.printStackTrace(); // TODO remove this line at last
         }
     }
 }

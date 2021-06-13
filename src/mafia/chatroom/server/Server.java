@@ -2,6 +2,8 @@ package mafia.chatroom.server;
 
 import mafia.model.GameData;
 import mafia.model.element.Message;
+import mafia.model.element.Phase;
+import mafia.model.element.Player;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -13,6 +15,7 @@ public class Server
 {
     // server properties
     private final int port;
+    private ServerSocket serverSocket;
     private ExecutorService pool;
 
     // user properties
@@ -32,10 +35,6 @@ public class Server
         return users;
     }
 
-    public GameData getGameData() {
-        return gameData;
-    }
-
     public ExecutorService getPool() {
         return pool;
     }
@@ -43,17 +42,18 @@ public class Server
     public void execute()
     {
         pool = Executors.newCachedThreadPool();
-        try (ServerSocket serverSocket = new ServerSocket(port))
+        try // removed try with resource
         {
+            serverSocket = new ServerSocket(port);
             System.out.println("Server is listening on port " + port);
             RegisterHandler registerHandler = new RegisterHandler(this, serverSocket);
             registerHandler.start();
             Thread.sleep(120000); // 2 min
             registerHandler.isWaiting = false; // time is up, no more client can join the game
-            System.out.println("Server is preparing the game, no more clients can join");
             pool.shutdown();
         }
         catch (IOException | InterruptedException e) {
+            System.err.println("Disconnected from clients");
             e.printStackTrace();
         }
     }
@@ -65,7 +65,7 @@ public class Server
         {
             if (entry.getValue()) // is ready and online
                 usernames.add(entry.getKey().getUsername());
-            // else remove the offline or "not-ready" player form the hashmap-> not sure about this
+            else users.remove(entry.getKey()); // TODO not sure
         }
         return usernames;
     }
@@ -74,7 +74,7 @@ public class Server
     {
         // check if the sender is alive and can speak or is the game's God
         String sender = message.getSender();
-        if (canSendMessageFrom(sender))
+        if (canSendMessageFrom(sender) || gameData.getCurrentPhase() == Phase.NOT_STARTED)
         {
             if (gameData.electionIsOn() && !sender.equals("GOD"))
                 collectVote(message); // no need to broadcast the votes to others
@@ -84,7 +84,7 @@ public class Server
                 for (Map.Entry<ClientHandler, Boolean> entry : users.entrySet())
                 {
                     // send the message to the awake players (also, check if the player is online)
-                    if (canSendMessageTo(entry))
+                    if (canSendMessageTo(entry) || gameData.getCurrentPhase() == Phase.NOT_STARTED)
                         entry.getKey().sendMessage(message);
                 }
             }
@@ -141,16 +141,40 @@ public class Server
         users.put(clientHandler, false);
     }
 
+    public synchronized void removeClient(ClientHandler clientHandler)
+    {
+        users.remove(clientHandler);
+        Player removedPlayer = gameData.findPlayer(clientHandler.getUsername());
+        if (removedPlayer != null)
+        {
+            gameData.handlePlayerRemoval(removedPlayer);
+            gameData.getDeadPlayers().add(removedPlayer);
+            gameData.getAlivePlayers().remove(removedPlayer);
+        }
+    }
+
     public synchronized void addReadyClient(ClientHandler clientHandler)
     {
         if (users.containsKey(clientHandler))
             users.put(clientHandler, true);
     }
 
-    public void shutDownClient(String username) {
-        users.remove(findClientHandler(username));
+    // this method is called form GameManager
+    public void shutDownClient(String username)
+    {
+        ClientHandler clientHandler = findClientHandler(username);
+        clientHandler.sendMessage(new Message("DISCONNECT", "GOD"));
+        removeClient(clientHandler);
     }
 
-    // TODO add methods to check if a client has got disconnected and handle it
-
+    public void shutDownServer()
+    {
+        try {
+            for (ClientHandler clientHandler : users.keySet())
+                clientHandler.setRunning(false);
+            serverSocket.close();
+        } catch (IOException e) {
+            System.out.println("Server socket is closed");
+        }
+    }
 }

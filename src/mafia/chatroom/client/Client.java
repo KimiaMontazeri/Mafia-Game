@@ -4,6 +4,7 @@ import mafia.view.Display;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
 
 public class Client
@@ -43,11 +44,13 @@ public class Client
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 
             // directed to the game
+            Boolean isRunning = true;
             new WriteThread(socket, dataOutputStream).start();
             new ReadThread(socket, dataInputStream).start();
-        }
-        catch (IOException e) {
+        } catch (SocketException e) {
             System.err.println("Got disconnected from the game");
+        } catch (IOException e) {
+            System.err.println("I/O error occurred");
         }
     }
 }

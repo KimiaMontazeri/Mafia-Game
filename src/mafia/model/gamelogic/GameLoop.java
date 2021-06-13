@@ -24,32 +24,55 @@ public class GameLoop
             loop();
         }
         // the game is canceled, shut down the program
-    }
-
-    private void end()
-    {
-        // announce the winner to all the players and end the whole game
-        god.wakeup(gameData.getAlivePlayers());
-        god.sendMsgFromGod("The game has ended\nThe winner is " + gameData.getWinner());
+        god.endGame();
     }
 
     private void loop()
     {
-        // check game over after each night phase or election day
         while (!gameOver())
         {
+            // day mode
             god.waiting(20000); // for the flow of the game
+            god.announceAlivePlayers();
             god.nextPhase();
-            god.doNightActs();
+            // all the alive and not silent players get to chat with each other for 90 seconds
+            god.chatMode();
+            god.nextPhase();
+            // election time
+            god.election();
 
-            if (gameOver())
+            // night mode
+            god.waiting(20000); // for the flow of the game
+            god.announceAlivePlayers();
+            if (gameOver()) // game over should be checked 2 times inside the loop
                 break;
-
-            god.waiting(20000); // for the flow of the game
             god.nextPhase();
-            god.doDayActs();
+
+            god.prepareNight();
+            // mafia night
+            god.mafiaNight();
+            god.nextPhase();
+            // doctor lector night
+            god.protect();
+            god.nextPhase();
+            // doctor night
+            god.heal();
+            god.nextPhase();
+            // detective night
+            god.detectPlayers();
+            god.nextPhase();
+            // sniper night
+            god.shoot();
+            god.nextPhase();
+            // therapist night
+            god.silent();
+            god.nextPhase();
+            // arnold night
+            god.inquiry();
+
+            god.endNight();
         }
-        end();
+        god.endGame();
     }
 
     private boolean gameOver()

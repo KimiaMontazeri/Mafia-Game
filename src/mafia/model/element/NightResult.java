@@ -95,7 +95,7 @@ public class NightResult
     public String toString()
     {
         StringBuilder str = new StringBuilder();
-        if (murders.size() == 0)
+        if (murders.size() == 0 && removedPlayers.size() == 0)
             str.append("Nobody got killed last night :|");
 
         else
@@ -103,16 +103,18 @@ public class NightResult
             str.append("We found the body/bodies of [ ");
             for (Player killedPlayer : murders.keySet())
                 str.append(killedPlayer.getUsername()).append(" ");
+            for (Player killedPlayer : removedPlayers)
+                str.append(killedPlayer.getUsername()).append(" ");
             str.append("] last night 😲");
         }
-
-        // checking if the list is empty because no one may get removed from the game at night
-        if (!removedPlayers.isEmpty())
-        {
-            for (Player removedPlayer : removedPlayers)
-                str.append(removedPlayer.getUsername()).append(" ");
-            str.append("got removed from the game!");
-        }
+//
+//        // checking if the list is empty because no one may get removed from the game at night
+//        if (!removedPlayers.isEmpty())
+//        {
+//            for (Player removedPlayer : removedPlayers)
+//                str.append(removedPlayer.getUsername()).append(" ");
+//            str.append("got removed from the game!");
+//        }
         if (silencedPlayer != null)
             str.append("\n").append(silencedPlayer.getUsername()).append(" got silenced for the next day");
         return str.toString();

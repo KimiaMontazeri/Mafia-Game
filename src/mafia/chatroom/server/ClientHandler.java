@@ -12,6 +12,7 @@ public class ClientHandler implements Runnable
     private final Socket socket;
     private final Server server;
     private final RegisterHandler registerHandler;
+    private boolean isRunning;
 
     // streams
     private DataInputStream dataInputStream;
@@ -27,8 +28,13 @@ public class ClientHandler implements Runnable
         this.socket = socket;
         this.server = server;
         this.registerHandler = registerHandler;
+        isRunning = true;
         isRegistered = false;
         isReady = false;
+    }
+
+    public void setRunning(boolean running) {
+        isRunning = running;
     }
 
     public String getUsername() {
@@ -66,56 +72,39 @@ public class ClientHandler implements Runnable
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
             String clientMsg;
-            boolean result;
             do {
                 clientMsg = dataInputStream.readUTF();
-                result = handleCommands(clientMsg);
+                handleCommands(clientMsg);
                 if (isRegistered)
                     msgHistory.addMessage(clientMsg);  // writes the client's messages to file
-            } while (result); // client has exited the game
-
+            } while (isRunning); // client has exited the game
+            dataOutputStream.writeUTF("DISCONNECT"); // notify the client that they got disconnected
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println("client " + username + " got disconnected");
         }
-//        server.getUsers().remove(this);
     }
 
     public void sendMessage(Message msg)
     {
         try {
-            if (handleCommands(msg.toString()))
-            {
-                dataOutputStream.writeUTF(msg.toString());
-                msgHistory.addMessage(msg.toString()); // writes the server's messages to file
-            }
+            if (msg.getText().equals("DISCONNECT"))
+                terminate();
+            // send the message to the client
+            dataOutputStream.writeUTF(msg.toString());
+            msgHistory.addMessage(msg.toString()); // writes the server's messages to file
+
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("client " + username + " got disconnected");
         }
     }
 
-    private Message convertToMessage(String text)
-    {
-        StringBuilder sender = new StringBuilder();
-        int lastIndexOfSender = text.indexOf(':');
-        String content = text.substring(lastIndexOfSender + 1);
-        char[] chars = text.toCharArray();
-
-        for (int i = 0; i <= lastIndexOfSender; i++)
-        {
-            if (chars[i] != '[' && chars[i] != ']')
-                sender.append(chars[i]);
-        }
-        return new Message(sender.toString(), content);
-    }
-
-    private boolean handleCommands(String command) throws IOException
+    public void handleCommands(String command) throws IOException
     {
         switch (command.toUpperCase())
         {
-            case "REGISTER" -> {
-                register();
-                return true;
-            }
+            case "REGISTER" -> register();
             case "READY" -> {
                 if (isRegistered && !isReady) {
                     registerHandler.addReadyClient(this);
@@ -129,41 +118,28 @@ public class ClientHandler implements Runnable
                     dataOutputStream.writeUTF("You have been added to the game's members before!");
                 else
                     dataOutputStream.writeUTF("Register first!");
-                return true;
             }
-            case "HISTORY" -> {
-                dataOutputStream.writeUTF("HISTORY\n" + msgHistory.getHistory());
-                return true;
-            }
-            case "HELP" -> {
-                dataOutputStream.writeUTF("""
+            case "HISTORY" -> dataOutputStream.writeUTF("HISTORY\n" + msgHistory.getHistory());
+            case "HELP" ->
+                    dataOutputStream.writeUTF("""
                         Game's commands are:
                         REGISTER -> Register in the game
                         READY -> Declare that you're all set to start the game
-                        HISTORY -> for getting the chat history
-                        EXIT -> for exiting the game""");
-                return true;
-            }
-            case "EXIT", "DISCONNECT" -> {
-                dataOutputStream.writeUTF("You left the game :( See you next time!");
-                server.broadcast(new Message("Left the game", username));
-                server.getUsers().remove(this);
-                return false;
-            }
+                        HISTORY -> Get the chat history
+                        EXIT -> Exit the game""");
+
+            case "EXIT", "DISCONNECT" -> terminate();
             default -> {
                 if (isRegistered)
                     server.broadcast(new Message(command, username));
-                return true;
             }
         }
     }
 
     public void terminate()
     {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        server.broadcast(new Message("Left the game", username));
+        server.removeClient(this); // method not working :|
+        isRunning = false;
     }
 }

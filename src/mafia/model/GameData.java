@@ -217,4 +217,19 @@ public class GameData implements Serializable // used for saving the game
         return null;
     }
 
+    public void handlePlayerRemoval(Player removedPlayer)
+    {
+        switch (removedPlayer.getRole())
+        {
+            case DOCTOR ->        hasDoctor = false;
+            case DETECTIVE ->     hasDetective = false;
+            case MAYOR ->         hasMayor = false;
+            case ARNOLD ->        hasArnold = false;
+            case SNIPER ->        hasSniper = false;
+            case THERAPIST ->     hasTherapist = false;
+            case GODFATHER ->     hasGodfather = false;
+            case LECTOR ->        hasLector = false;
+        }
+    }
+
 }

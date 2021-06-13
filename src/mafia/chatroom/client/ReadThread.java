@@ -8,8 +8,6 @@ import java.net.SocketException;
 
 public class ReadThread extends Thread
 {
-    private ObjectInputStream objectInputStream;
-
     private final DataInputStream dataInputStream;
     private final Socket socket;
 
@@ -27,17 +25,20 @@ public class ReadThread extends Thread
             while (true)
             {
                 String text = dataInputStream.readUTF();
-                if (text.equals("DISCONNECT"))
-                    break;
                 if (text.contains("HISTORY"))
                     Display.displayHistory(text);
+                else if (text.equals("DISCONNECT"))
+                    break;
                 else
                     Display.print(text);
             }
-        }
-        catch (IOException e) {
-            e.printStackTrace(); // remove this at last
-            System.err.println("Got disconnected from the game!");
+            socket.close();
+        } catch (SocketException e) {
+            System.err.println("Got disconnected from the game");
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("I/O error occurred");
+            e.printStackTrace(); // TODO remove this at last
         }
     }
 }
