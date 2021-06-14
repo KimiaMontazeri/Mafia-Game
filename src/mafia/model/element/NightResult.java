@@ -6,6 +6,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This class store the night results of the mafia game such as all the murders, ...
+ * @author KIMIA
+ * @version 1.0
+ */
 public class NightResult
 {
     private final HashMap<Player, Role> murders; // killed player -> murderer
@@ -14,40 +19,70 @@ public class NightResult
     private boolean arnoldHadInquiry = false;
     private Player silencedPlayer;
 
+    /**
+     * Creates a night result
+     */
     public NightResult() {
         murders = new HashMap<>();
         heals = new HashMap<>();
         removedPlayers = new HashSet<>();
     }
 
+    /**
+     * @return murders
+     */
     public HashMap<Player, Role> getMurders() {
         return murders;
     }
 
+    /**
+     * @return heals
+     */
     public HashMap<Player, Role> getHeals() {
         return heals;
     }
 
+    /**
+     * @return players who got removed from the game at night
+     */
     public Set<Player> getRemovedPlayers() {
         return removedPlayers;
     }
 
+    /**
+     * @return whether arnold had a inquiry at night or not
+     */
     public boolean arnoldHadInquiry() {
         return arnoldHadInquiry;
     }
 
+    /**
+     * @return Player who has been silenced by the therapist at night
+     */
     public Player getSilencedPlayer() {
         return silencedPlayer;
     }
 
+    /**
+     * @param arnoldHadInquiry whether arnold had an inquiry at night or not
+     */
     public void setArnoldHadInquiry(boolean arnoldHadInquiry) {
         this.arnoldHadInquiry = arnoldHadInquiry;
     }
 
+    /**
+     * Sets the silenced player to the given parameter
+     * @param silencedPlayer player who has been silenced
+     */
     public void setSilencedPlayer(Player silencedPlayer) {
         this.silencedPlayer = silencedPlayer;
     }
 
+    /**
+     * Checks if the player has been protected by doctor lector
+     * @param player player to check
+     * @return true if the player is protected by lector
+     */
     public boolean isProtectedByLector(Player player)
     {
         if (heals.containsKey(player))
@@ -55,17 +90,27 @@ public class NightResult
         return false;
     }
 
+    /**
+     * Adds a murder to the list of the night's murders
+     * @param killedPlayer killed player
+     * @param murderer murderer
+     */
     public void addMurder(Player killedPlayer, Role murderer)
-    { // the murderer has to be checked (they can only be in mafia team or a sniper)
+    {
         if (murderer == MAFIA || murderer == GODFATHER)
             murders.put(killedPlayer, murderer);
         else if (murderer == SNIPER)
         {
-            if (!heals.containsKey(killedPlayer)) // the sniper won't be able to kill a protected mafia
+            if (!heals.containsKey(killedPlayer)) // sniper won't be able to kill a protected mafia
                 murders.put(killedPlayer, murderer);
         }
     }
 
+    /**
+     * Adds a heal to the list
+     * @param healedPlayer player who has been healed
+     * @param healer healer (it can be a doctor or the mafia's doctor-doctor lector)
+     */
     public void addHeal(Player healedPlayer, Role healer)
     {
         if (murders.containsKey(healedPlayer) && healer == DOCTOR)
@@ -77,20 +122,18 @@ public class NightResult
             heals.put(healedPlayer, healer);
     }
 
+    /**
+     * Adds a player to the list of the night's removed players
+     * @param player player who has been removed
+     */
     public void addRemovedPlayer(Player player) {
         removedPlayers.add(player);
     }
 
-    public boolean hasSniperKill()
-    {
-        for (Role murderer : murders.values())
-        {
-            if (murderer == SNIPER)
-                return true;
-        }
-        return false;
-    }
-
+    /**
+     *
+     * @return All the night events in a string
+     */
     @Override
     public String toString()
     {
@@ -107,14 +150,6 @@ public class NightResult
                 str.append(killedPlayer.getUsername()).append(" ");
             str.append("] last night 😲");
         }
-//
-//        // checking if the list is empty because no one may get removed from the game at night
-//        if (!removedPlayers.isEmpty())
-//        {
-//            for (Player removedPlayer : removedPlayers)
-//                str.append(removedPlayer.getUsername()).append(" ");
-//            str.append("got removed from the game!");
-//        }
         if (silencedPlayer != null)
             str.append("\n").append(silencedPlayer.getUsername()).append(" got silenced for the next day");
         return str.toString();

@@ -1,5 +1,10 @@
 package mafia.model.element;
 
+/**
+ * This enum represents the phase of mafia game
+ * @author KIMIA
+ * @version 1.0
+ */
 public enum Phase
 {
     NOT_STARTED,
@@ -14,5 +19,4 @@ public enum Phase
     DAY,
     ELECTION_DAY,
     DAY_MAYOR,
-    ENDED
 }

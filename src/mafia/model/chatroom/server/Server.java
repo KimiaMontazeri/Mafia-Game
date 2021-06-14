@@ -1,9 +1,10 @@
-package mafia.chatroom.server;
+package mafia.model.chatroom.server;
 
 import mafia.model.GameData;
 import mafia.model.element.Message;
 import mafia.model.element.Phase;
 import mafia.model.element.Player;
+import mafia.model.gamelogic.PlayerManager;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -11,6 +12,11 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * This class is the main server of the game which controls all the clients and broadcasts messages to all clients
+ * @author KIMIA
+ * @version 1.0
+ */
 public class Server
 {
     // server properties
@@ -24,6 +30,10 @@ public class Server
     // game properties
     private final GameData gameData;
 
+    /**
+     *
+     * @param port sets the server's port to this parameter
+     */
     public Server(int port)
     {
         this.port = port;
@@ -31,14 +41,18 @@ public class Server
         gameData = GameData.getInstance();
     }
 
-    public HashMap<ClientHandler, Boolean> getUsers() {
-        return users;
-    }
-
+    /**
+     *
+     * @return thread pool of ClientHandlers
+     */
     public ExecutorService getPool() {
         return pool;
     }
 
+    /**
+     * Executes the server
+     * Creates a register handler and gives it 2 minutes to register clients to the game
+     */
     public void execute()
     {
         pool = Executors.newCachedThreadPool();
@@ -58,6 +72,10 @@ public class Server
         }
     }
 
+    /**
+     * Prepares the game with the players who are ready
+     * @return a list of the ready player's usernames
+     */
     public ArrayList<String> prepareGame()
     {
         ArrayList<String> usernames = new ArrayList<>();
@@ -65,11 +83,14 @@ public class Server
         {
             if (entry.getValue()) // is ready and online
                 usernames.add(entry.getKey().getUsername());
-            else users.remove(entry.getKey()); // TODO not sure
         }
         return usernames;
     }
 
+    /**
+     * Broadcasts a message to all players (if the player is awake)
+     * @param message message to broadcast
+     */
     public synchronized void broadcast(Message message)
     {
         // check if the sender is alive and can speak or is the game's God
@@ -95,6 +116,10 @@ public class Server
         }
     }
 
+    /**
+     * Collects votes by adding them to the GameData's election
+     * @param message a message that contains the name of a candidate
+     */
     public void collectVote(Message message)
     {
         String candidate = message.getText();
@@ -113,20 +138,40 @@ public class Server
         findClientHandler(message.getSender()).sendMessage(answer);
     }
 
+    /**
+     * Checks if it can send a message to the client
+     * @param entry entry of the hashmap of clients
+     * @return true if it can send message to the client
+     */
     private boolean canSendMessageTo(Map.Entry<ClientHandler, Boolean> entry) {
         return gameData.isAwake(entry.getKey().getUsername()) && entry.getValue();
     }
 
+    /**
+     * Checks if it can send message from the client
+     * @param sender sender of the message
+     * @return true if it can send message from the client
+     */
     private boolean canSendMessageFrom(String sender)
     {
         return sender.equals("GOD") || (gameData.canSpeak(sender)
                                     &&  gameData.isAwake(sender));
     }
 
+    /**
+     * Checks if the given username exits in the game or not
+     * @param username username to find
+     * @return true if the username exits
+     */
     public synchronized boolean usernameExists(String username) {
         return findClientHandler(username) != null;
     }
 
+    /**
+     * Finds the client handler with the given username
+     * @param username client's username
+     * @return the corresponding client handler
+     */
     public ClientHandler findClientHandler(String username)
     {
         for (ClientHandler clientHandler : users.keySet())
@@ -137,36 +182,57 @@ public class Server
         return null;
     }
 
+    /**
+     * Adds a client to the list of clients but assumes that they are not ready to play yet
+     * @param clientHandler client to add
+     */
     public synchronized void addClient(ClientHandler clientHandler) {
         users.put(clientHandler, false);
     }
 
+    /**
+     * Removes a client handler from the list of client handlers and the game's players
+     * @param clientHandler client handler to remove
+     */
     public synchronized void removeClient(ClientHandler clientHandler)
     {
         users.remove(clientHandler);
         Player removedPlayer = gameData.findPlayer(clientHandler.getUsername());
         if (removedPlayer != null)
         {
-            gameData.handlePlayerRemoval(removedPlayer);
+            PlayerManager.handlePlayerRemoval(removedPlayer);
             gameData.getDeadPlayers().add(removedPlayer);
             gameData.getAlivePlayers().remove(removedPlayer);
         }
     }
 
+    /**
+     *
+     * @param clientHandler a client that has declared that they are ready to play
+     */
     public synchronized void addReadyClient(ClientHandler clientHandler)
     {
         if (users.containsKey(clientHandler))
             users.put(clientHandler, true);
     }
 
-    // this method is called form GameManager
-    public void shutDownClient(String username)
+    /**
+     * Disconnects a client that has the given username from the server
+     * @param username username of the client to disconnect
+     */
+    public void shutDownClient(String username) // this method is called form GameManager
     {
         ClientHandler clientHandler = findClientHandler(username);
-        clientHandler.sendMessage(new Message("DISCONNECT", "GOD"));
-        removeClient(clientHandler);
+        if (clientHandler != null)
+        {
+            clientHandler.sendMessage(new Message("DISCONNECT", "GOD"));
+            removeClient(clientHandler);
+        }
     }
 
+    /**
+     * Shuts down the whole server and the game
+     */
     public void shutDownServer()
     {
         try {

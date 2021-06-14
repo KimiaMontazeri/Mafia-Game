@@ -1,4 +1,4 @@
-package mafia.chatroom.client;
+package mafia.model.chatroom.client;
 
 import mafia.view.Display;
 
@@ -7,14 +7,27 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Scanner;
 
+/**
+ * Game's client gets connected to the game and starts to play
+ * @author KIMIA
+ * @version 1.0
+ */
 public class Client
 {
     private final int port;
 
+    /**
+     * Gets the port from the user by calling the appropriate method
+     * and sets it to the field "port"
+     */
     public Client() {
         port = getPortFromUser();
     }
 
+    /**
+     * user types in the game's port to get connected
+     * @return port
+     */
     private int getPortFromUser()
     {
         Scanner scanner = new Scanner(System.in);
@@ -31,6 +44,9 @@ public class Client
         }
     }
 
+    /**
+     * connects to the server by creating a socket
+     */
     public void connectToServer()
     {
         try
@@ -44,7 +60,6 @@ public class Client
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 
             // directed to the game
-            Boolean isRunning = true;
             new WriteThread(socket, dataOutputStream).start();
             new ReadThread(socket, dataInputStream).start();
         } catch (SocketException e) {

@@ -7,10 +7,18 @@ import static mafia.model.element.Phase.*;
 
 import java.util.*;
 
+/**
+ * This class sets up a game by creating players and giving random roles to them
+ * @author KIMIA
+ * @version 1.0
+ */
 public class GameSetup
 {
     private GameData gameData;
 
+    /**
+     * Creates a GameSetup
+     */
     public GameSetup() {
         gameData = GameData.getInstance();
     }
@@ -25,6 +33,11 @@ public class GameSetup
         gameData.setCurrentPhase(NOT_STARTED);
     }
 
+    /**
+     * Initializes players with the given usernames and gives random roles to each one
+     * @param usernames usernames of the clients
+     * @return a list of all the initialized players
+     */
     private ArrayList<Player> playersInit(ArrayList<String> usernames)
     {
         ArrayList<Player> players = new ArrayList<>(usernames.size());
