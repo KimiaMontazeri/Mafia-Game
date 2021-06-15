@@ -98,12 +98,18 @@ public class GameLoop
         int mafiaNum = gameData.getMafias().size();
         int citizenNum = gameData.getCitizens().size();
 
-        if (mafiaNum >= citizenNum)
+
+        if (mafiaNum == 0 && citizenNum == 0)
+        {
+            gameData.setWinner(Winner.UNKNOWN);
+            return true;
+        }
+        else if (mafiaNum >= citizenNum)
         {
             gameData.setWinner(Winner.MAFIA);
             return true;
         }
-        if (mafiaNum == 0)
+        else if (mafiaNum == 0)
         {
             gameData.setWinner(Winner.CITY);
             return true;

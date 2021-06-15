@@ -5,6 +5,7 @@ import mafia.model.utils.Cache;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Date;
 
 /**
  * This class handles one client that has got connected to the game
@@ -25,6 +26,7 @@ public class ClientHandler implements Runnable
     private String username;
     private boolean isRegistered, isReady;
     private Cache msgHistory;
+    Date lastDate;
 
     /**
      *
@@ -32,7 +34,7 @@ public class ClientHandler implements Runnable
      * @param server game's major server
      * @param registerHandler a handler which manages client registers
      */
-    public ClientHandler(Socket socket, Server server, RegisterHandler registerHandler)
+    ClientHandler(Socket socket, Server server, RegisterHandler registerHandler)
     {
         this.socket = socket;
         this.server = server;
@@ -64,7 +66,7 @@ public class ClientHandler implements Runnable
      * creates a cache to store the client's messages at last
      * @throws IOException if an I/O error occurs while sending/receiving messages from the client
      */
-    public void register() throws IOException
+    private void register() throws IOException
     {
         if (!isRegistered)
         {
@@ -100,6 +102,7 @@ public class ClientHandler implements Runnable
             String clientMsg;
             do {
                 clientMsg = dataInputStream.readUTF();
+                lastDate = new Date();
                 handleCommands(clientMsg);
                 if (isRegistered)
                     msgHistory.addMessage(clientMsg);  // writes the client's messages to file
@@ -133,7 +136,7 @@ public class ClientHandler implements Runnable
      * Sends a specific message to the client
      * @param msg message to send
      */
-    public void sendMessage(Message msg)
+    void sendMessage(Message msg)
     {
         try {
             if (msg.getText().equals("DISCONNECT"))
@@ -144,7 +147,7 @@ public class ClientHandler implements Runnable
             msgHistory.addMessage(msg.toString());
 
         } catch (IOException e) {
-            System.out.println("client " + username + " got disconnected");
+            System.out.println(username + " got disconnected");
         }
     }
 
@@ -153,7 +156,7 @@ public class ClientHandler implements Runnable
      * @param command command to handle
      * @throws IOException if an I/O error occurs while sending/receiving messages from the client
      */
-    public void handleCommands(String command) throws IOException
+    private void handleCommands(String command) throws IOException
     {
         switch (command.toUpperCase())
         {
@@ -189,10 +192,19 @@ public class ClientHandler implements Runnable
         }
     }
 
+//    void checkClientActivity()
+//    {
+//        if (System.currentTimeMillis() - lastDate.getTime() >= 900000) 
+//        {
+//            server.removeClient(this);
+//            isRunning = false;
+//        }
+//    }
+
     /**
      * Terminates the client handler by notifying the server
      */
-    public void terminate()
+    void terminate()
     {
         server.broadcast(new Message("Left the game", username));
         server.removeClient(this);

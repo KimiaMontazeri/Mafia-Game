@@ -213,7 +213,10 @@ public class Server
     public synchronized void addReadyClient(ClientHandler clientHandler)
     {
         if (users.containsKey(clientHandler))
+        {
             users.put(clientHandler, true);
+            broadcast(new Message(clientHandler.getUsername() + " joined the game!", "GOD"));
+        }
     }
 
     /**

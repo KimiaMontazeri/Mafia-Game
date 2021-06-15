@@ -19,13 +19,13 @@ public class Display
             String sender = text.substring(0, text.indexOf(":"));
             String[] lines = text.split("\n");
 
-            System.out.print("\t\t\t\t\t");
+            System.out.print("\t\t\t\t\t\t\t\t\t\t");
             System.out.print(sender);
             System.out.println(lines[0].substring(sender.length()));
 
             for (int i = 1; i < lines.length; i++)
             {
-                System.out.print("\t\t\t\t\t");
+                System.out.print("\t\t\t\t\t\t\t\t\t\t");
                 for (int j = 0; j < sender.length() + 2; j++)
                     System.out.print(" ");
                 System.out.println(lines[i]);
